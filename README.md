@@ -1,12 +1,12 @@
-# **📘 Documentación: Sistema Inteligente, Automatización de Minería y Análisis de Datos.**
+# **📘 Documentación:**
 
-**Versión del Documento:** 2.0
+**Versión del Documento:** 3.0
 
 **Estado:** Aprobado para Desarrollo
 
 **Fecha:** Febrero 2026
 
-## ---
+---
 
 **1\. Visión del Producto**
 
@@ -18,7 +18,7 @@ El sistema es una plataforma de inteligencia de negocios dual que cierra el cicl
   1. **Agente Administrativo (B2B):** Asistente de IA para Marketing. Genera reportes (PDF/Excel), responde consultas SQL en lenguaje natural y sugiere estrategias.  
   2. **Agente Cliente (B2C):** Chatbot de recomendaciones personalizadas basadas en búsqueda semántica (vectores).
 
-## ---
+---
 
 **2\. ⚠️ Matriz de Compatibilidad y Versiones (Estricto)**
 
@@ -44,7 +44,7 @@ El sistema es una plataforma de inteligencia de negocios dual que cierra el cicl
 * **Vite:** ^5.1.0 (Motor de construcción).  
 * **React:** 18.2.0 (Estable).
 
-## ---
+---
 
 **3\. Arquitectura del Sistema**
 
@@ -61,7 +61,7 @@ Organización celular por valor de negocio, no por tipo técnico.
 * **Capas:** app \-\> pages \-\> widgets \-\> features \-\> entities \-\> shared.  
 * **Regla:** Las capas superiores solo pueden importar de las inferiores.
 
-## ---
+---
 
 **4\. Stack Tecnológico Detallado**
 
@@ -77,7 +77,7 @@ Organización celular por valor de negocio, no por tipo técnico.
 | **Ciencia de Datos** | **Pandas \+ Scikit-learn** | Limpieza de datos y Clustering de usuarios. |
 | **Infraestructura** | **Docker Compose** | Contenerización de servicios (DB, n8n). |
 
-## ---
+---
 
 **5\. Modelo de Datos Híbrido**
 
@@ -88,19 +88,7 @@ Diseñado para soportar datos "sucios" del scraping y datos "limpios" del negoci
 3. **customer\_profiles (SQL \+ Vector):** Perfil del usuario, segmento de riesgo y vector de preferencias.  
 4. **sales\_history (SQL):** Transacciones limpias para reportes financieros.
 
-## ---
-
-## 
-
-## 
-
-## 
-
-## 
-
-## 
-
-## 
+---
 
 ## **6\. Estructura de Archivos del Proyecto**
 
@@ -132,9 +120,46 @@ crm-intelligence-system/
     ├── jsconfig.json              \# Alias de rutas (@/)  
     └── package.json               \# Dependencias Node
 
-## ---
+---
 
-**7\. Guía de Inicio Rápido (Developers)**
+**7\. Estrcutura de commits:**
+
+Estructura: *tipo(alcance): descripción breve*
+
+1. Los Tipos (tipo)
+
+Indican qué clase de cambio estás haciendo:
+
+- feat (Feature/Característica): Cuando añades una nueva funcionalidad al código (ej. "Crear el módulo de scraping", "Añadir botón de exportar PDF").
+
+- fix (Fix/Reparación): Cuando arreglas un error o bug (ej. "Corregir error 500 al subir archivo vacío").
+
+- docs (Documentación): Cambios solo en documentación (ej. "Actualizar README", "Agregar comentarios al código", "Subir Capítulo 1").
+
+- style (Estilo): Cambios de formato (espacios, puntos y coma, formato de Python con Black) que no afectan la lógica.
+
+- refactor (Refactorización): Reescribir código para mejorarlo sin cambiar su comportamiento externo (ej. "Mover lógica de usuario a un servicio separado").
+
+- test (Pruebas): Añadir o corregir tests unitarios.
+
+- chore (Tareas rutinarias): Cambios en configuración, herramientas de construcción, Docker o dependencias (ej. "Actualizar versión de React", "Configurar Docker Compose").
+
+2. El Alcance (alcance)
+Indica en qué parte del sistema hiciste el cambio.
+
+- backend: Cambios en la API Python.
+
+- frontend: Cambios en la web React.
+
+- infra: Cambios en Docker, Nginx o n8n.
+
+- db: Cambios en tablas SQL o migraciones.
+
+- data: Cambios relacionados con los CSV o JSONs de scraping.
+
+---
+
+**8\. Guía de Inicio Rápido (Developers)**
 
 1. **Infraestructura:**  
    Bash  
