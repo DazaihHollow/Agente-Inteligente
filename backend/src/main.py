@@ -1,17 +1,22 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
-from src.shared.database import engine
+from src.shared.database import engine, Base
+from src.modules.data_ingestion.router import router as ingestion_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Crear tablas (Si no existen)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     try:
-        # Intenta conectar a la base de datos
+        # Verificar conexión
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-            print("\n✅ CONEXION A BASE DE DATOS EXITOSA!\n")
+            print("\n✅ CONEXION EXITOSA Y TABLAS CREADAS!\n")
     except Exception as e:
-        print(f"\n❌ ERROR DE CONEXION A BASE DE DATOS: {e}\n")
+        print(f"\n❌ ERROR DE INICIO: {e}\n")
     yield
 
 app = FastAPI(
@@ -20,6 +25,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
+
+app.include_router(ingestion_router)
 
 @app.get("/health")
 async def health_check():
