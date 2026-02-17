@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 from src.shared.database import engine, Base
 from src.modules.data_ingestion.router import router as ingestion_router
+from src.modules.intelligence.router import router as intelligence_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,6 +28,7 @@ app = FastAPI(
 )
 
 app.include_router(ingestion_router)
+app.include_router(intelligence_router)
 
 @app.get("/health")
 async def health_check():
