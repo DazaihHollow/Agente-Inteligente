@@ -178,3 +178,18 @@ Indica en qué parte del sistema hiciste el cambio.
    cd frontend  
    npm install                     \# Node 20  
    npm run dev                     \# Inicia Vite
+
+---
+
+## **9. Consideraciones de Producción ⚠️**
+
+### **9.1 Límites de la IA (Groq Free Tier)**
+El sistema utiliza actualmente el modelo `llama-3.3-70b-versatile` a través de la capa gratuita de Groq.
+*   **Límites actuales:** ~30 peticiones por minuto (RPM), ~1,000 peticiones por día.
+*   **Recomendación:** Para uso masivo en producción, considera añadir una tarjeta de crédito en Groq o cambiar el proveedor (en `backend/src/modules/interaction/service.py`) a OpenAI/Anthropic.
+
+### **9.2 Seguridad (RBAC)**
+El sistema es **Secure by Default**.
+*   Todo dato ingresado sin `access_level` explícito será marcado como `private`.
+*   El Chat Widget público (`role='customer'`) **NO** mostrará estos datos.
+*   Debes etiquetar explícitamente como `public` la información que desees que los clientes vean.
