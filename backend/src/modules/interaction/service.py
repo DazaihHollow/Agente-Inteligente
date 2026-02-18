@@ -48,6 +48,5 @@ class ChatService:
         )
 
         return {
-            "response": response['choices'][0]['message']['content'],
-            "sources": [p.name for p in similar_products]
+            "response": response['choices'][0]['message']['content']
         }
