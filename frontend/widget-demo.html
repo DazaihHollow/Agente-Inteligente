@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo de Widget - Agente Inteligente</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 { color: #1f2937; margin-bottom: 1rem; }
+        p { color: #4b5563; line-height: 1.6; }
+        .code-block {
+            background: #111827;
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: left;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Sitio Web de Ejemplo</h1>
+        <p>Esta es una página web cualquiera (tu landing page, tu e-commerce, etc.).</p>
+        <p>El <strong>Widget del Agente</strong> debería aparecer flotando en la esquina inferior derecha. ↘️</p>
+        
+        <div class="code-block">
+            &lt;!-- Código de Inserción --&gt;<br>
+            &lt;script src="./dist-widget/widget.umd.js"&gt;&lt;/script&gt;
+        </div>
+    </div>
+
+    <!-- Script del Widget (Simulando producción) -->
+    <!-- En producción esto sería una URL absoluta como https://api.tudominio.com/widget.js -->
+    <script src="./dist-widget/widget.umd.js"></script>
+
+</body>
+</html>

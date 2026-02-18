@@ -1,0 +1,68 @@
+.chat-widget-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  font-family: 'Inter', sans-serif;
+}
+
+.chat-bubble-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #4f46e5; /* Indigo-600 */
+  color: white;
+  border: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  transition: transform 0.2s;
+}
+
+.chat-bubble-button:hover {
+  transform: scale(1.1);
+  background-color: #4338ca; /* Indigo-700 */
+}
+
+.chat-window-wrapper {
+  position: absolute;
+  bottom: 80px; /* Above the button */
+  right: 0;
+  width: 380px;
+  height: 600px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Override existing h-screen from ChatWindow */
+.chat-window-wrapper > div {
+  height: 100% !important;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+  .chat-window-wrapper {
+    width: 90vw;
+    height: 80vh;
+    right: -10px;
+  }
+}
