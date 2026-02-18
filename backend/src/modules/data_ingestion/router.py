@@ -9,6 +9,7 @@ router = APIRouter(prefix="/ingestion", tags= ["Ingestion"])
 # Esquema de entrada (pydantic)
 class IngestionRequest(BaseModel):
     source: str
+    access_level: str = "private" # public | private
     payload: dict | list # puede ser un objeto o una lista de objetos
 
 # Endpoint para recibir datos crudos
@@ -18,9 +19,14 @@ async def ingest_data(request: IngestionRequest, db: AsyncSession = Depends(get_
     Recibe datos crudos de n8n u otras fuentes
     """
     try:
+        # Inyectar access_level en el payload para que el processor lo encuentre
+        final_payload = request.payload
+        if isinstance(final_payload, dict):
+            final_payload['access_level'] = request.access_level
+        
         new_data = RawData(
             source=request.source,
-            payload=request.payload
+            payload=final_payload
         )
         db.add(new_data)
         await db.commit()

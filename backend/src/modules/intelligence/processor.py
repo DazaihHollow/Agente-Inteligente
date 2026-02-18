@@ -37,11 +37,17 @@ class ContentProcessor:
                         product_name = payload_data[key]
                         break
 
+            # Intentar extraer access_level del payload, sino usar default 'private'
+            key_access = 'private'
+            if isinstance(payload_data, dict):
+                key_access = payload_data.get('access_level', 'private')
+
             # Guardar como producto
             new_product = Product(
                 name=product_name, 
                 description=payload_str, 
-                embedding=vector
+                embedding=vector,
+                access_level=key_access
             )
             db.add(new_product)
 

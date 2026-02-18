@@ -13,7 +13,7 @@ class ChatService:
         self.llm_model = os.getenv("LLM_MODEL", "groq/llama-3.3-70b-versatile")
         self.api_key = os.getenv("GROQ_API_KEY")
 
-    async def ask(self, question: str, db: AsyncSession):
+    async def ask(self, question: str, db: AsyncSession, role: str = "customer"):
         # Se convierte la pregunta en vector
         query_vector = await self.embedding_service.generate(question)
 
@@ -21,7 +21,13 @@ class ChatService:
         # El operador <-> mide la distancia (mientras menor sea, mas simillar son)
 
         # Usamos l2_distance de pgvector.
-        stmt = select(Product).order_by(Product.embedding.l2_distance(query_vector)).limit(3)
+        query = select(Product).order_by(Product.embedding.l2_distance(query_vector)).limit(3)
+        
+        # Filtro de Seguridad (RBAC)
+        if role == "customer":
+            query = query.filter(Product.access_level == "public")
+            
+        stmt = query
         result = await db.execute(stmt)
         similar_products = result.scalars().all()
 

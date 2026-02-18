@@ -10,3 +10,6 @@ class Product(Base):
     description = Column(Text)
     # Vector de 384 dimensiones (Estándar all-MiniLM-L6-v2)
     embedding = Column(Vector(384))
+    
+    # Control de Acceso: 'public' (Clientes) vs 'private' (Admin)
+    access_level = Column(String, default='private')
