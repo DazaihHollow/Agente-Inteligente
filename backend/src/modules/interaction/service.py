@@ -8,9 +8,10 @@ import os
 class ChatService:
     def __init__(self):
         self.embedding_service = EmbeddingService()
-        # Se utilizara Gemini para generar las respuestas
-        self.llm_model = os.getenv("LLM_MODEL", "gemini/gemini-1.5-flash")
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        # Se utilizara Groq (Llama 3.3) para generar las respuestas (Gratis y Rapido)
+        # Actualizado porque llama3-8b-8192 fue decomisado
+        self.llm_model = os.getenv("LLM_MODEL", "groq/llama-3.3-70b-versatile")
+        self.api_key = os.getenv("GROQ_API_KEY")
 
     async def ask(self, question: str, db: AsyncSession):
         # Se convierte la pregunta en vector
@@ -19,6 +20,7 @@ class ChatService:
         # Se busca similitud semantica en la base de datos
         # El operador <-> mide la distancia (mientras menor sea, mas simillar son)
 
+        # Usamos l2_distance de pgvector.
         stmt = select(Product).order_by(Product.embedding.l2_distance(query_vector)).limit(3)
         result = await db.execute(stmt)
         similar_products = result.scalars().all()
@@ -35,7 +37,7 @@ class ChatService:
         {context_text}
         """
 
-        # Generar respuesta con gemini
+        # Generar respuesta con LLM (Groq)
         response = completion(
             model=self.llm_model,
             messages=[

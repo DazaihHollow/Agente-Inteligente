@@ -1,27 +1,25 @@
-from litellm import embedding
+from sentence_transformers import SentenceTransformer
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class EmbeddingService:
     def __init__(self):
-        # Modelo De Gemini.
-        # IMPORTANTE: se necesita la API KEY en el archivo .env
-        self.model = os.getenv("EMBEDDING_MODEL", "gemini/text-embedding-004")
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        # Modelo Local (HuggingFace)
+        # Se descarga la primera vez y luego corre localmente.
+        # No requiere API Key.
+        model_name = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+        print(f"🔄 Cargando modelo de embeddings local: {model_name}...")
+        self.model = SentenceTransformer(model_name)
+        print("✅ Modelo cargado correctamente.")
 
     async def generate(self, text: str) -> list[float]:
         if not text:
             return []
 
         try:
-            response = embedding(
-                model=self.model,
-                input=text,
-                api_key=self.api_key
-            )
-            return response['data'][0]['embedding']
+            # Generate embedding
+            # encode devuelve un numpy array, lo convertimos a lista
+            vector = self.model.encode(text).tolist()
+            return vector
         except Exception as e:
-            print(f"Error generando embedding: {e}")
+            print(f"Error generando embedding local: {e}")
             return []

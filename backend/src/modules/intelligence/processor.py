@@ -26,17 +26,30 @@ class ContentProcessor:
             if not vector:
                 continue
 
+            # Intentar extraer un nombre del payload
+            payload_data = item.payload
+            product_name = f"Procesado desde {item.source}"
+            
+            if isinstance(payload_data, dict):
+                # Buscar claves comunes de nombre
+                for key in ['name', 'nombre', 'cliente', 'empresa', 'product', 'title']:
+                    if key in payload_data:
+                        product_name = payload_data[key]
+                        break
+
             # Guardar como producto
             new_product = Product(
-                name=f"Procesado desde {item.source}", 
+                name=product_name, 
                 description=payload_str, 
                 embedding=vector
             )
             db.add(new_product)
 
             # (Opcional) Aquí deberíamos marcar el RawData como "procesado" o borrarlo
-            # db.delete(item)
+            # Borrar dato crudo una vez procesado
+            await db.delete(item)
             processed_count += 1
+
 
         await db.commit()
         return processed_count

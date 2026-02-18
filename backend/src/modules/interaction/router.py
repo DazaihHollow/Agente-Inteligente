@@ -9,7 +9,7 @@ router = APIRouter(prefix="/chat", tags=["Interaction"])
 class ChatRequest(BaseModel):
     message: str
 
-@router.post("/")
+@router.post("")
 async def chat_endpoint(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     """
     Endpoint para conversar con la IA usando datos del negocio (RAG).

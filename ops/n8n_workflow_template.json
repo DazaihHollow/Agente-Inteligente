@@ -1,0 +1,131 @@
+{
+    "name": "Agente Inteligente - Ingestión de Prueba",
+    "nodes": [
+        {
+            "parameters": {},
+            "name": "Start",
+            "type": "n8n-nodes-base.start",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "product_name",
+                            "value": "Silla Ergonómica Pro"
+                        },
+                        {
+                            "name": "description",
+                            "value": "Silla de oficina con soporte lumbar ajustable y malla transpirable."
+                        },
+                        {
+                            "name": "price",
+                            "value": "250 USD"
+                        }
+                    ],
+                    "number": [
+                        {
+                            "name": "stock",
+                            "value": 45
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Datos de Prueba",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://host.docker.internal:8000/ingestion/",
+                "sendBody": true,
+                "contentType": "json",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "source",
+                            "value": "n8n (Manual Trigger)"
+                        },
+                        {
+                            "name": "payload",
+                            "value": "={{$json}}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Enviar a Ingestion API",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://host.docker.internal:8000/intelligence/process",
+                "sendBody": true,
+                "contentType": "json",
+                "bodyParameters": {
+                    "parameters": []
+                },
+                "options": {}
+            },
+            "name": "Gatillar Procesamiento",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                900,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Start": {
+            "main": [
+                [
+                    {
+                        "node": "Datos de Prueba",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Datos de Prueba": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar a Ingestion API",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enviar a Ingestion API": {
+            "main": [
+                [
+                    {
+                        "node": "Gatillar Procesamiento",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

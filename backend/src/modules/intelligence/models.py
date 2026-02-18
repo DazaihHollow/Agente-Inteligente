@@ -8,5 +8,5 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(Text)
-    # Vector de 768 dimensiones (Estándar Gemini text-embedding-004)
-    embedding = Column(Vector(768))
+    # Vector de 384 dimensiones (Estándar all-MiniLM-L6-v2)
+    embedding = Column(Vector(384))
