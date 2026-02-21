@@ -43,6 +43,9 @@ app.include_router(ingestion_router)
 app.include_router(intelligence_router)
 app.include_router(chat_router)
 
+from src.modules.reports.router import router as reports_router
+app.include_router(reports_router)
+
 @app.get("/health")
 async def health_check():
     """

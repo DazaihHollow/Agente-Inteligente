@@ -3,7 +3,7 @@ import { MessageBubble } from '../../../entities/message/ui/MessageBubble';
 import { ChatInput } from '../../../features/chat/ui/ChatInput';
 import { sendMessage } from '../../../features/chat/api/chatApi';
 
-export const ChatWindow = () => {
+export const ChatWindow = ({ userRole = 'customer' }) => {
     const [messages, setMessages] = useState([
         {
             id: 'welcome',
@@ -34,7 +34,7 @@ export const ChatWindow = () => {
 
         try {
             // 2. Call API
-            const response = await sendMessage(text);
+            const response = await sendMessage(text, userRole);
 
             // 3. Add agent response
             const agentMsg = {
