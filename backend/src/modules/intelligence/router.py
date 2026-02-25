@@ -11,7 +11,7 @@ from src.modules.intelligence.models import Product
 router = APIRouter(prefix="/intelligence", tags=["Intelligence"])
 
 @router.post("/process")
-async def process_content(limit: int = 10, db: AsyncSession = Depends(get_db)):
+async def process_content(limit: int = 100, db: AsyncSession = Depends(get_db)):
     """
     Gatillo manual para procesar datos crudos y convertirlos en vectores.
     """
@@ -61,6 +61,19 @@ async def update_product(product_id: int, product: ProductUpdate, db: AsyncSessi
 async def list_products(db: AsyncSession = Depends(get_db)):
     """
     Lista todos los productos (para el panel administrativo).
+    Excluye el campo 'embedding' que causa problemas de serialización y sobrecarga de datos.
     """
-    result = await db.execute(select(Product).order_by(Product.id))
+    # Seleccionar solo las columnas necesarias
+    from sqlalchemy import select
+    from sqlalchemy.orm import Load
+    
+    # Usamos load_only para elegir qué campos traer y evitar el embedding
+    stmt = select(Product).options(Load(Product).load_only(
+        Product.id, 
+        Product.name, 
+        Product.description, 
+        Product.access_level
+    )).order_by(Product.id)
+    
+    result = await db.execute(stmt)
     return result.scalars().all()

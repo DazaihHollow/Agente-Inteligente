@@ -97,19 +97,36 @@ class ReportService:
         pdf_output = pdf.output() # returns bytes in fpdf2
         return BytesIO(pdf_output)
 
-    async def get_sales_stats(self, db: AsyncSession, month: int = None, year: int = None):
+    async def list_customers(self, db: AsyncSession):
         """
-        Obtiene estadísticas de ventas filtradas por mes y año.
+        Lista todos los nombres de clientes únicos que existen en las ventas.
+        """
+        query = select(func.distinct(Sale.customer_name)).order_by(Sale.customer_name)
+        result = await db.execute(query)
+        return [row[0] for row in result.all() if row[0]]
+
+    async def get_sales_stats(self, db: AsyncSession, month: int = None, year: int = None, customer_name: str = None):
+        """
+        Obtiene estadísticas de ventas filtradas por mes, año y/o cliente.
+        Si month es None o 0, se considera el año completo.
         """
         query = select(
             func.sum(Sale.price_total).label("total_profit"),
-            func.sum(Sale.quantity).label("total_sold")
+            func.sum(Sale.quantity).label("total_sold"),
+            func.count(func.distinct(Sale.customer_name)).label("total_clients")
         )
         
-        if month:
-            query = query.where(extract('month', Sale.sale_date) == month)
+        # Filtrado por año (obligatorio si se provee)
         if year:
             query = query.where(extract('year', Sale.sale_date) == year)
+            
+        # Filtrado por mes (opcional, 0 o None significa 'todo el año')
+        if month and month > 0:
+            query = query.where(extract('month', Sale.sale_date) == month)
+
+        # Filtrado por cliente
+        if customer_name and customer_name != "Todos":
+            query = query.where(Sale.customer_name == customer_name)
             
         result = await db.execute(query)
         stats = result.fetchone()
@@ -120,18 +137,56 @@ class ReportService:
             func.sum(Sale.price_total).label("total")
         ).group_by(Sale.category)
         
-        if month:
-            cat_query = cat_query.where(extract('month', Sale.sale_date) == month)
         if year:
             cat_query = cat_query.where(extract('year', Sale.sale_date) == year)
+        if month and month > 0:
+            cat_query = cat_query.where(extract('month', Sale.sale_date) == month)
+        if customer_name and customer_name != "Todos":
+            cat_query = cat_query.where(Sale.customer_name == customer_name)
             
         cat_result = await db.execute(cat_query)
         breakdown = [{"category": row.category, "total": row.total} for row in cat_result]
 
+        # Breakdown by Seller and Category (Software vs Hardware)
+        seller_query = select(
+            Sale.seller_name,
+            Sale.category,
+            func.sum(Sale.price_total).label("total")
+        ).group_by(Sale.seller_name, Sale.category)
+        
+        if year:
+            seller_query = seller_query.where(extract('year', Sale.sale_date) == year)
+        if month and month > 0:
+            seller_query = seller_query.where(extract('month', Sale.sale_date) == month)
+        if customer_name and customer_name != "Todos":
+            seller_query = seller_query.where(Sale.customer_name == customer_name)
+
+        seller_result = await db.execute(seller_query)
+        
+        # Agrupar por vendedor en el formato deseado
+        sellers_map = {}
+        for row in seller_result:
+            s_name = row.seller_name or "Sin Asignar"
+            if s_name not in sellers_map:
+                sellers_map[s_name] = {"name": s_name, "software": 0, "hardware": 0, "total": 0}
+            
+            cat_lower = row.category.lower()
+            if "software" in cat_lower:
+                sellers_map[s_name]["software"] += row.total
+            elif "hardware" in cat_lower:
+                sellers_map[s_name]["hardware"] += row.total
+            
+            sellers_map[s_name]["total"] += row.total
+
+        seller_stats = list(sellers_map.values())
+        seller_stats.sort(key=lambda x: x["total"], reverse=True)
+
         return {
             "total_profit": stats.total_profit or 0,
             "total_sold": stats.total_sold or 0,
-            "breakdown": breakdown
+            "total_clients": stats.total_clients or 0,
+            "breakdown": breakdown,
+            "seller_stats": seller_stats
         }
 
     async def get_custom_dashboard_data(self, db: AsyncSession, prompt: str):

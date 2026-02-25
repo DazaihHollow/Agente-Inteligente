@@ -15,8 +15,10 @@ const AdminDashboard = () => {
 
     // Sales State
     const [salesStats, setSalesStats] = useState(null);
-    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+    const [selectedMonth, setSelectedMonth] = useState(0); // 0 for all year
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [customers, setCustomers] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState('Todos');
 
     // Custom Dashboard State
     const [customQuery, setCustomQuery] = useState('');
@@ -27,19 +29,21 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchAllData();
-    }, [selectedMonth, selectedYear]);
+    }, [selectedMonth, selectedYear, selectedCustomer]);
 
     const fetchAllData = async () => {
         setLoading(true);
         try {
-            const [statsRes, productsRes, salesRes] = await Promise.all([
+            const [statsRes, productsRes, salesRes, customersRes] = await Promise.all([
                 axios.get('http://localhost:8000/reports/stats'),
                 axios.get('http://localhost:8000/intelligence/products'),
-                axios.get(`http://localhost:8000/reports/sales?month=${selectedMonth}&year=${selectedYear}`)
+                axios.get(`http://localhost:8000/reports/sales?month=${selectedMonth}&year=${selectedYear}&customer_name=${selectedCustomer}`),
+                axios.get('http://localhost:8000/reports/customers')
             ]);
             setStats(statsRes.data);
             setProducts(productsRes.data);
             setSalesStats(salesRes.data);
+            setCustomers(customersRes.data);
         } catch (error) {
             console.error("Error fetching admin data:", error);
         }
@@ -158,10 +162,21 @@ const AdminDashboard = () => {
                             <h2 className="text-xl font-bold text-gray-800">Resumen General de Ventas</h2>
                             <div className="flex gap-4">
                                 <select
+                                    value={selectedCustomer}
+                                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                                    className="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-indigo-500 outline-none min-w-[150px]"
+                                >
+                                    <option value="Todos">Todos los clientes</option>
+                                    {customers.map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                                <select
                                     value={selectedMonth}
                                     onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
                                     className="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-indigo-500 outline-none"
                                 >
+                                    <option value={0}>Todos los meses</option>
                                     {Array.from({ length: 12 }, (_, i) => (
                                         <option key={i + 1} value={i + 1}>
                                             {new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date(2024, i))}
@@ -184,24 +199,20 @@ const AdminDashboard = () => {
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
                                 <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Ganancias Totales</div>
                                 <div className="text-3xl font-bold text-gray-900">${salesStats?.total_profit?.toLocaleString()}</div>
-                                <div className="text-green-600 text-xs mt-2">↑ 12% vs mes anterior</div>
                             </div>
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                                 <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Productos Vendidos</div>
                                 <div className="text-3xl font-bold text-gray-900">{salesStats?.total_sold}</div>
-                                <div className="text-blue-600 text-xs mt-2">Unidades acumuladas</div>
                             </div>
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                                 <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Ticket Promedio</div>
                                 <div className="text-3xl font-bold text-gray-900">
                                     ${salesStats?.total_sold ? (salesStats.total_profit / salesStats.total_sold).toFixed(2) : 0}
                                 </div>
-                                <div className="text-gray-400 text-xs mt-2">Por transacción</div>
                             </div>
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Nuevos Clientes</div>
-                                <div className="text-3xl font-bold text-gray-900">24</div>
-                                <div className="text-purple-600 text-xs mt-2">Crecimiento continuo</div>
+                                <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Clientes Activos</div>
+                                <div className="text-3xl font-bold text-gray-900">{salesStats?.total_clients || 0}</div>
                             </div>
                         </div>
 
@@ -230,21 +241,30 @@ const AdminDashboard = () => {
                                     </ResponsiveContainer>
                                 </div>
                             </div>
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center">
-                                <h3 className="text-lg font-bold text-gray-800 mb-6 uppercase text-center tracking-widest text-gray-400">Canales de Venta</h3>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                                        <span className="font-medium">Venta Directa</span>
-                                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-bold">45%</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                                        <span className="font-medium">Marketplace</span>
-                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm font-bold">35%</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                                        <span className="font-medium">Referidos</span>
-                                        <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded text-sm font-bold">20%</span>
-                                    </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                <h3 className="text-lg font-bold text-gray-800 mb-6">Desempeño por Vendedor</h3>
+                                <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+                                    {(salesStats?.seller_stats || []).map((seller) => (
+                                        <div key={seller.name} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="font-bold text-gray-900">{seller.name}</span>
+                                                <span className="text-indigo-600 font-bold">${seller.total.toLocaleString()}</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div className="flex justify-between p-2 bg-white rounded-lg border border-gray-100">
+                                                    <span className="text-gray-500">Software</span>
+                                                    <span className="font-semibold text-green-600">${seller.software.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between p-2 bg-white rounded-lg border border-gray-100">
+                                                    <span className="text-gray-500">Hardware</span>
+                                                    <span className="font-semibold text-blue-600">${seller.hardware.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(!salesStats?.seller_stats || salesStats.seller_stats.length === 0) && (
+                                        <div className="text-center py-10 text-gray-400 italic">No hay datos de vendedores</div>
+                                    )}
                                 </div>
                             </div>
                         </div>

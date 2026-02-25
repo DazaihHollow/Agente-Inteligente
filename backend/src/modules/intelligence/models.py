@@ -27,5 +27,7 @@ class Sale(Base):
     category = Column(String) # Software / Hardware
     region = Column(String)
     customer_type = Column(String) # Corporate / Individual
+    customer_name = Column(String) # Nombre del cliente (para métricas netas)
+    seller_name = Column(String) # Nombre del vendedor
 
     product = relationship("Product")

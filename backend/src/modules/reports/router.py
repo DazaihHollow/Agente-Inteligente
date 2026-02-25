@@ -28,14 +28,22 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
 
 @router.get("/sales")
 async def get_sales_stats(
-    month: Optional[int] = Query(None, ge=1, le=12),
+    month: Optional[int] = Query(0, ge=0, le=12),
     year: Optional[int] = Query(None, ge=2000),
+    customer_name: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Obtiene estadísticas de ventas filtradas por mes/año.
+    Obtiene estadísticas de ventas filtradas por mes/año/cliente.
     """
-    return await report_service.get_sales_stats(db, month, year)
+    return await report_service.get_sales_stats(db, month, year, customer_name)
+
+@router.get("/customers")
+async def list_customers(db: AsyncSession = Depends(get_db)):
+    """
+    Obtiene la lista de nombres de clientes únicos.
+    """
+    return await report_service.list_customers(db)
 
 @router.post("/custom")
 async def get_custom_dashboard(

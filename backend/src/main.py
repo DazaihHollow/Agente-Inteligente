@@ -1,4 +1,9 @@
+import asyncio
+import sys
 from contextlib import asynccontextmanager
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 from fastapi import FastAPI
 from sqlalchemy import text
 from src.shared.database import engine, Base
