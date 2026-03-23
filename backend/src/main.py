@@ -58,3 +58,10 @@ async def health_check():
     Used by Docker and monitoring tools to verify the API is responsive.
     """
     return {"status": "ok", "system": "operational"}
+
+from fastapi.responses import RedirectResponse
+
+@app.get("/", include_in_schema=False)
+async def root():
+    # Redirigir al frontend principal (Escaparate B2C)
+    return RedirectResponse(url="http://localhost:5173/")

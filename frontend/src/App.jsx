@@ -6,7 +6,10 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Ruta Pública (B2C) */}
         <Route path="/" element={<HomePage />} />
+        
+        {/* Ruta Privada (B2B Administrativa) */}
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>
