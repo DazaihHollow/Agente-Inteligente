@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, TrendingUp, Sparkles } from 'lucide-react';
-import { ChatWidget } from '../components/ChatWidget';
+import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, TrendingUp, Sparkles, Bot } from 'lucide-react';
+import { ChatWindow } from '../widgets/chat/ui/ChatWindow';
 
 const AdminDashboard = () => {
     // Tab State
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-20">
+        <div className={`bg-gray-50 ${activeTab === 'custom' ? 'h-screen overflow-hidden' : 'min-h-screen pb-20'}`}>
             {/* Header / Tabs */}
             <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -134,7 +134,7 @@ const AdminDashboard = () => {
                             {[
                                 { id: 'inventory', label: 'Inventario', icon: Package },
                                 { id: 'sales', label: 'Ventas', icon: TrendingUp },
-                                { id: 'custom', label: 'Personalizado', icon: Sparkles },
+                                { id: 'custom', label: 'Agente', icon: Bot },
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
@@ -153,7 +153,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className={activeTab === 'custom' ? "flex flex-col h-[calc(100vh-5rem)] w-full" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
 
                 {/* SALES TAB */}
                 {activeTab === 'sales' && (
@@ -323,116 +323,11 @@ const AdminDashboard = () => {
 
                 {/* CUSTOM TAB (IA DRIVEN) */}
                 {activeTab === 'custom' && (
-                    <div className="animate-in zoom-in-95 duration-300">
-                        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
-                            <div className="relative flex-1 group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition" size={20} />
-                                <input
-                                    type="text"
-                                    value={customQuery}
-                                    onChange={(e) => setCustomQuery(e.target.value)}
-                                    placeholder="Pregúntale al dashboard: 'Ventas de software en región Norte por clientes corporativos'..."
-                                    className="w-full bg-white border border-gray-200 rounded-2xl py-4 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                                />
-                            </div>
-                            <button
-                                onClick={handleCustomAnalyze}
-                                disabled={customLoading}
-                                className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-indigo-700 transition flex items-center gap-2 shadow-lg shadow-indigo-200 disabled:opacity-50"
-                            >
-                                {customLoading ? <div className="animate-spin h-5 w-5 border-2 border-white border-b-transparent rounded-full" /> : <Sparkles size={20} />}
-                                Generar Dashboard
-                            </button>
-                        </div>
-
-                        {customData ? (
-                            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                {/* Dynamic KPI Cards for Custom View */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                        <div className="text-gray-500 text-xs mb-1 uppercase tracking-wider font-semibold">Profit (Filtro)</div>
-                                        <div className="text-3xl font-bold text-indigo-600">${customData.kpis?.total_profit?.toLocaleString()}</div>
-                                    </div>
-                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                        <div className="text-gray-500 text-xs mb-1 uppercase tracking-wider font-semibold">Unidades (Filtro)</div>
-                                        <div className="text-3xl font-bold text-gray-900">{customData.kpis?.total_sold}</div>
-                                    </div>
-                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                        <div className="text-gray-500 text-xs mb-1 uppercase tracking-wider font-semibold">TKT Promedio</div>
-                                        <div className="text-3xl font-bold text-gray-900">${customData.kpis?.avg_ticket?.toFixed(2)}</div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-                                    <div className="flex justify-between items-center mb-10">
-                                        <h3 className="text-2xl font-bold text-gray-800">{customData.title}</h3>
-                                        <div className="relative group">
-                                            <button className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-200 transition">
-                                                Exportar <ChevronDown size={16} />
-                                            </button>
-                                            <div className="absolute right-0 mt-2 w-48 bg-white border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-                                                <button
-                                                    onClick={() => handleCustomExport('pdf')}
-                                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 rounded-t-xl"
-                                                >
-                                                    Como PDF (.pdf)
-                                                </button>
-                                                <button
-                                                    onClick={() => handleCustomExport('excel')}
-                                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 rounded-b-xl"
-                                                >
-                                                    Como Excel (.xlsx)
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="h-96">
-                                        {customData.data.length > 0 ? (
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                {customData.chart_type === 'pie' ? (
-                                                    <PieChart>
-                                                        <Pie data={customData.data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} label>
-                                                            {customData.data.map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5]} />
-                                                            ))}
-                                                        </Pie>
-                                                        <Tooltip />
-                                                        <Legend />
-                                                    </PieChart>
-                                                ) : (
-                                                    <BarChart data={customData.data}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                                        <XAxis dataKey="name" />
-                                                        <YAxis />
-                                                        <Tooltip cursor={{ fill: '#F3F4F6' }} />
-                                                        <Bar dataKey="value" fill="#4F46E5" radius={[4, 4, 0, 0]} />
-                                                    </BarChart>
-                                                )}
-                                            </ResponsiveContainer>
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full text-gray-400">
-                                                No se encontraron datos para estos criterios.
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="bg-white p-20 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
-                                <div className="bg-indigo-50 p-4 rounded-full mb-4">
-                                    <Sparkles className="text-indigo-400" size={32} />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-2">Dashboard de IA Inteligente</h3>
-                                <p className="text-gray-500 max-w-md">Escribe una pregunta arriba para que el agente procese los datos y cree una visualización personalizada para ti.</p>
-                            </div>
-                        )}
+                    <div className="animate-in zoom-in-95 duration-300 flex-1 flex flex-col min-h-0">
+                        <ChatWindow userRole="admin" />
                     </div>
                 )}
             </main>
-
-            {/* Admin Chat Integrated */}
-            <ChatWidget adminMode={true} />
 
             {/* Edit Modal (Existing logic) */}
             {editingProduct && (
