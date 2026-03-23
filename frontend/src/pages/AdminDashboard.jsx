@@ -148,23 +148,21 @@ const AdminDashboard = () => {
     };
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <span className="ml-3 text-gray-600 font-medium">Cargando inteligencia de negocio...</span>
+        <div className="flex items-center justify-center min-h-screen bg-[#070514] text-white">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+            <span className="ml-3 text-indigo-200 font-medium">Cargando inteligencia de negocio...</span>
         </div>
     );
 
     return (
-        <div className={`bg-gray-50 ${activeTab === 'custom' ? 'h-screen overflow-hidden' : 'min-h-screen pb-20'}`}>
+        <div className={`bg-[#070514] text-white selection:bg-purple-600 ${activeTab === 'custom' ? 'h-screen overflow-hidden' : 'min-h-screen pb-20'}`}>
             {/* Header / Tabs */}
-            <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+            <div className="bg-[#0d0a20]/90 border-b border-purple-900/30 sticky top-0 z-10 shadow-[0_4px_30px_rgba(139,92,246,0.1)] backdrop-blur-md">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
                         <div className="flex items-center gap-3">
-                            <div className="bg-indigo-600 p-2 rounded-lg">
-                                <TrendingUp className="text-white" size={24} />
-                            </div>
-                            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Admin<span className="text-indigo-600">Dash</span></h1>
+                            <img src="/logo.png" alt="Epsilon Intelligence Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:scale-105 transition-transform" />
+                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-indigo-200 tracking-tight">Epsilon<span className="text-purple-400">Dash</span></h1>
                         </div>
 
                         <nav className="flex space-x-8">
@@ -176,9 +174,9 @@ const AdminDashboard = () => {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === tab.id
-                                        ? 'border-indigo-600 text-indigo-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 transition-all duration-300 ${activeTab === tab.id
+                                        ? 'border-purple-500 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]'
+                                        : 'border-transparent text-indigo-300/50 hover:text-white hover:border-purple-800'
                                         }`}
                                 >
                                     <tab.icon size={18} />
@@ -196,12 +194,12 @@ const AdminDashboard = () => {
                 {activeTab === 'sales' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-xl font-bold text-gray-800">Resumen General de Ventas</h2>
+                            <h2 className="text-xl font-bold text-white drop-shadow-sm">Resumen General de Ventas</h2>
                             <div className="flex gap-4">
                                 <select
                                     value={selectedCustomer}
                                     onChange={(e) => setSelectedCustomer(e.target.value)}
-                                    className="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-indigo-500 outline-none min-w-[150px]"
+                                    className="bg-[#120e2b] text-white border border-purple-800/30 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none min-w-[150px] shadow-sm cursor-pointer"
                                 >
                                     <option value="Todos">Todos los clientes</option>
                                     {customers.map((c) => (
@@ -211,7 +209,7 @@ const AdminDashboard = () => {
                                 <select
                                     value={selectedMonth}
                                     onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                                    className="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-indigo-500 outline-none"
+                                    className="bg-[#120e2b] text-white border border-purple-800/30 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none shadow-sm cursor-pointer"
                                 >
                                     <option value={0}>Todos los meses</option>
                                     {Array.from({ length: 12 }, (_, i) => (
@@ -223,7 +221,7 @@ const AdminDashboard = () => {
                                 <select
                                     value={selectedYear}
                                     onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                    className="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-indigo-500 outline-none"
+                                    className="bg-[#120e2b] text-white border border-purple-800/30 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none shadow-sm cursor-pointer"
                                 >
                                     <option value={2024}>2024</option>
                                     <option value={2025}>2025</option>
@@ -233,29 +231,29 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                                <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Ganancias Totales</div>
-                                <div className="text-3xl font-bold text-gray-900">${salesStats?.total_profit?.toLocaleString()}</div>
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-purple-500/50 hover:shadow-purple-900/20 transition-all duration-300">
+                                <div className="text-indigo-300/70 text-sm mb-1 uppercase tracking-wider font-semibold">Ganancias Totales</div>
+                                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">${salesStats?.total_profit?.toLocaleString()}</div>
                             </div>
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Productos Vendidos</div>
-                                <div className="text-3xl font-bold text-gray-900">{salesStats?.total_sold}</div>
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-blue-500/50 hover:shadow-blue-900/20 transition-all duration-300">
+                                <div className="text-indigo-300/70 text-sm mb-1 uppercase tracking-wider font-semibold">Productos Vendidos</div>
+                                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">{salesStats?.total_sold}</div>
                             </div>
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Ticket Promedio</div>
-                                <div className="text-3xl font-bold text-gray-900">
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-purple-500/50 hover:shadow-purple-900/20 transition-all duration-300">
+                                <div className="text-indigo-300/70 text-sm mb-1 uppercase tracking-wider font-semibold">Ticket Promedio</div>
+                                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">
                                     ${salesStats?.total_sold ? (salesStats.total_profit / salesStats.total_sold).toFixed(2) : 0}
                                 </div>
                             </div>
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">Clientes Activos</div>
-                                <div className="text-3xl font-bold text-gray-900">{salesStats?.total_clients || 0}</div>
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-blue-500/50 hover:shadow-blue-900/20 transition-all duration-300">
+                                <div className="text-indigo-300/70 text-sm mb-1 uppercase tracking-wider font-semibold">Clientes Activos</div>
+                                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">{salesStats?.total_clients || 0}</div>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                <h3 className="text-lg font-bold text-gray-800 mb-6">Hardware vs Software</h3>
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30">
+                                <h3 className="text-lg font-bold text-white mb-6 tracking-wide drop-shadow-sm">Hardware vs Software</h3>
                                 <div className="h-80">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
@@ -266,41 +264,42 @@ const AdminDashboard = () => {
                                                 cx="50%"
                                                 cy="50%"
                                                 outerRadius={100}
-                                                label
+                                                label={{ fill: '#e2e8f0', fontSize: 12, fontWeight: 'bold' }}
+                                                stroke="none"
                                             >
                                                 {salesStats?.breakdown.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#4F46E5' : index === 1 ? '#10B981' : '#F59E0B'} />
+                                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#8B5CF6' : index === 1 ? '#3B82F6' : '#C084FC'} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip />
-                                            <Legend />
+                                            <Tooltip contentStyle={{ backgroundColor: '#070514', borderColor: '#4C1D95', borderRadius: '12px', color: '#fff' }} itemStyle={{ color: '#fff' }} />
+                                            <Legend wrapperStyle={{ color: '#c7d2fe' }} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                <h3 className="text-lg font-bold text-gray-800 mb-6">Desempeño por Vendedor</h3>
-                                <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 overflow-hidden">
+                                <h3 className="text-lg font-bold text-white mb-6 tracking-wide drop-shadow-sm">Desempeño por Vendedor</h3>
+                                <div className="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
                                     {(salesStats?.seller_stats || []).map((seller) => (
-                                        <div key={seller.name} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                        <div key={seller.name} className="p-4 bg-[#0d0a20] rounded-xl border border-purple-900/30 hover:border-purple-500/50 transition-colors">
                                             <div className="flex justify-between items-center mb-3">
-                                                <span className="font-bold text-gray-900">{seller.name}</span>
-                                                <span className="text-indigo-600 font-bold">${seller.total.toLocaleString()}</span>
+                                                <span className="font-bold text-purple-100">{seller.name}</span>
+                                                <span className="text-purple-400 font-black">${seller.total.toLocaleString()}</span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div className="flex justify-between p-2 bg-white rounded-lg border border-gray-100">
-                                                    <span className="text-gray-500">Software</span>
-                                                    <span className="font-semibold text-green-600">${seller.software.toLocaleString()}</span>
+                                                <div className="flex justify-between p-2 bg-[#1a153a] rounded-lg border border-purple-800/20">
+                                                    <span className="text-indigo-300">Software</span>
+                                                    <span className="font-bold text-blue-400">${seller.software.toLocaleString()}</span>
                                                 </div>
-                                                <div className="flex justify-between p-2 bg-white rounded-lg border border-gray-100">
-                                                    <span className="text-gray-500">Hardware</span>
-                                                    <span className="font-semibold text-blue-600">${seller.hardware.toLocaleString()}</span>
+                                                <div className="flex justify-between p-2 bg-[#1a153a] rounded-lg border border-purple-800/20">
+                                                    <span className="text-indigo-300">Hardware</span>
+                                                    <span className="font-bold text-blue-400">${seller.hardware.toLocaleString()}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                     {(!salesStats?.seller_stats || salesStats.seller_stats.length === 0) && (
-                                        <div className="text-center py-10 text-gray-400 italic">No hay datos de vendedores</div>
+                                        <div className="text-center py-10 text-purple-300/50 italic">No hay datos de vendedores</div>
                                     )}
                                 </div>
                             </div>
@@ -312,54 +311,54 @@ const AdminDashboard = () => {
                 {activeTab === 'inventory' && (
                     <div className="animate-in fade-in duration-300">
                         <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-xl font-bold text-gray-800">Cerebro del Agente (Base de Conocimiento)</h2>
+                            <h2 className="text-xl font-bold text-white drop-shadow-sm">Cerebro del Agente (Base de Conocimiento)</h2>
                             <div className="flex gap-4">
-                                <button onClick={handleAddNew} className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-200 transition font-bold shadow-sm">
+                                <button onClick={handleAddNew} className="bg-[#1a153a] text-purple-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#231d4d] border border-purple-800/50 hover:border-purple-500/50 transition font-bold shadow-sm">
                                     <Plus size={18} /> Añadir Regla Manual
                                 </button>
-                                <button onClick={() => handleDownload('pdf')} className="bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-50 transition">
+                                <button onClick={() => handleDownload('pdf')} className="bg-[#120e2b] border border-red-900/50 text-red-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-900/20 transition">
                                     <FileText size={18} /> PDF
                                 </button>
-                                <button onClick={() => handleDownload('excel')} className="bg-white border border-green-200 text-green-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-50 transition">
+                                <button onClick={() => handleDownload('excel')} className="bg-[#120e2b] border border-green-900/50 text-green-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-900/20 transition">
                                     <Download size={18} /> Excel
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                        <div className="bg-[#120e2b] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 overflow-hidden">
+                            <table className="min-w-full divide-y divide-purple-900/30">
+                                <thead className="bg-[#0d0a20]">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Concepto Sincronizado</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Visibilidad</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Instrucción IA (Oculta)</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Acción</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Concepto Sincronizado</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Visibilidad</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Instrucción IA (Oculta)</th>
+                                        <th className="px-6 py-4 text-right text-xs font-bold text-purple-300 uppercase tracking-wider">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-100">
+                                <tbody className="bg-[#120e2b] divide-y divide-purple-900/20">
                                     {products.map((product) => (
-                                        <tr key={product.id} className="hover:bg-gray-50 transition">
+                                        <tr key={product.id} className="hover:bg-[#1a153a] transition-colors">
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-gray-900">{product.name}</div>
-                                                <div className="text-xs text-gray-500 truncate max-w-xs">{product.description}</div>
+                                                <div className="font-bold text-white">{product.name}</div>
+                                                <div className="text-xs text-indigo-200/70 truncate max-w-xs">{product.description}</div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${product.access_level === 'public' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${product.access_level === 'public' ? 'bg-green-900/30 text-green-400 border-green-800/50' : 'bg-red-900/30 text-red-400 border-red-800/50'
                                                     }`}>
                                                     {product.access_level.toUpperCase()}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-purple-700 max-w-[200px] truncate">{product.agent_instruction || <span className="text-gray-400 italic">Sin instrucción especial...</span>}</div>
+                                                <div className="text-sm font-medium text-purple-300 max-w-[200px] truncate">{product.agent_instruction || <span className="text-indigo-300/50 italic">Sin instrucción especial...</span>}</div>
                                             </td>
                                             <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                                <button onClick={() => handleRecalculate(product.id)} className="text-amber-500 hover:bg-amber-50 p-2 rounded-full transition" title="Recalcular Vector IA">
+                                                <button onClick={() => handleRecalculate(product.id)} className="text-amber-500 hover:bg-amber-900/30 p-2 rounded-full transition" title="Recalcular Vector IA">
                                                     <RefreshCw size={18} />
                                                 </button>
-                                                <button onClick={() => handleEdit(product)} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="Editar Contexto">
+                                                <button onClick={() => handleEdit(product)} className="text-purple-400 hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Contexto">
                                                     <Edit size={18} />
                                                 </button>
-                                                <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition" title="Eliminar Conocimiento">
+                                                <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full transition" title="Eliminar Conocimiento">
                                                     <Trash2 size={18} />
                                                 </button>
                                             </td>
@@ -381,70 +380,72 @@ const AdminDashboard = () => {
 
             {/* Edit Modal (Existing logic) */}
             {editingProduct && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-                        <h2 className="text-2xl font-bold mb-6">{editingProduct.id ? 'Afinar Contexto del Asistente' : 'Añadir Regla Manual'}</h2>
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-[#120e2b] rounded-2xl p-8 max-w-md w-full shadow-[0_10px_40px_rgba(139,92,246,0.2)] border border-purple-800/50">
+                        <h2 className="text-2xl font-black text-white mb-6 drop-shadow-sm">{editingProduct.id ? 'Afinar Contexto del Asistente' : 'Añadir Regla Manual'}</h2>
 
-                        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Concepto (Ej. Producto)</label>
+                                <label className="block text-sm font-bold text-indigo-200/80 mb-2 uppercase tracking-wide">Concepto (Ej. Producto)</label>
                                 <input
                                     type="text"
                                     value={editingProduct.name}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                    className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-600/50 transition placeholder-purple-900/50"
+                                    placeholder="Nombre del producto o regla"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Descripción</label>
+                                <label className="block text-sm font-bold text-indigo-200/80 mb-2 uppercase tracking-wide">Descripción</label>
                                 <textarea
                                     value={editingProduct.description || ''}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                    className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-600/50 transition placeholder-purple-900/50"
                                     rows="2"
+                                    placeholder="Descripción general"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Precio ($)</label>
+                                    <label className="block text-sm font-bold text-indigo-200/80 mb-2 uppercase tracking-wide">Precio ($)</label>
                                     <input
                                         type="number"
                                         value={editingProduct.price || 0}
                                         onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })}
-                                        className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                        className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-600/50 transition"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Stock Relevante</label>
+                                    <label className="block text-sm font-bold text-indigo-200/80 mb-2 uppercase tracking-wide">Stock Relevante</label>
                                     <input
                                         type="number"
                                         value={editingProduct.stock || 0}
                                         onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })}
-                                        className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                        className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-600/50 transition"
                                     />
                                 </div>
                             </div>
                             
-                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                                <label className="block text-sm font-bold text-purple-900 mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <div className="bg-purple-900/20 p-4 rounded-xl border border-purple-500/30">
+                                <label className="block text-sm font-bold text-purple-300 mb-2 uppercase tracking-wide flex items-center gap-2">
                                     <Bot size={16} /> Instrucción Oculta para el Agente (RAG)
                                 </label>
-                                <p className="text-xs text-purple-700 mb-2">Dicta cómo debe responder la IA cuando se mencione este concepto.</p>
+                                <p className="text-xs text-purple-200/70 mb-2">Dicta cómo debe responder la IA cuando se mencione este concepto.</p>
                                 <textarea
                                     value={editingProduct.agent_instruction || ''}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, agent_instruction: e.target.value })}
-                                    className="w-full border border-purple-200 rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-300 transition text-sm bg-white"
+                                    className="w-full bg-[#0a0818] border border-purple-800/30 text-white rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-600/50 transition text-sm placeholder-purple-900/50"
                                     rows="3"
                                     placeholder="Ej. 'Si el usuario pregunta por Alpha System, infórmale del 20% de descuento y prioriza soporte VIP.'"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Nivel de Visibilidad</label>
+                                <label className="block text-sm font-bold text-indigo-200/80 mb-2 uppercase tracking-wide">Nivel de Visibilidad</label>
                                 <select
                                     value={editingProduct.access_level}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, access_level: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                    className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-600/50 transition cursor-pointer"
                                 >
                                     <option value="public">🌐 Público (Visible para clientes)</option>
                                     <option value="private">🔒 Privado (Solo uso interno)</option>
@@ -453,8 +454,8 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="mt-10 flex justify-end gap-4">
-                            <button onClick={() => setEditingProduct(null)} className="px-6 py-3 font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
-                            <button onClick={handleSave} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 flex items-center gap-2">
+                            <button onClick={() => setEditingProduct(null)} className="px-6 py-3 font-bold text-indigo-300/60 hover:text-indigo-100 transition-colors">Cancelar</button>
+                            <button onClick={handleSave} className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:from-purple-500 hover:to-blue-500 shadow-lg shadow-purple-900/50 flex items-center gap-2 border border-purple-500/50 transition-all cursor-pointer">
                                 <Save size={18} /> {editingProduct.id ? 'Guardar Cambios' : 'Crear Producto'}
                             </button>
                         </div>

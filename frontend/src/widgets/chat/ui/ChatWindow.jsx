@@ -58,10 +58,10 @@ export const ChatWindow = ({ userRole = 'customer' }) => {
     };
 
     return (
-        <div className={`flex flex-col h-full ${userRole === 'admin' ? "bg-transparent" : "bg-gray-50"}`}>
+        <div className={`flex flex-col h-full ${userRole === 'admin' ? "bg-transparent" : "bg-[#070514]"}`}>
             {userRole !== 'admin' && (
-                <header className="bg-white border-b border-gray-200 px-6 py-4">
-                    <h1 className="text-xl font-bold text-gray-800">Agente Inteligente 🤖</h1>
+                <header className="bg-[#0d0a20] border-b border-purple-900/30 px-6 py-4 shadow-[0_4px_30px_rgba(139,92,246,0.05)]">
+                    <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 tracking-wide">Agente Inteligente 🤖</h1>
                 </header>
             )}
 
@@ -69,11 +69,11 @@ export const ChatWindow = ({ userRole = 'customer' }) => {
                 <div className={`space-y-4 ${userRole === 'admin' ? "max-w-5xl mx-auto pb-4" : ""}`}>
                     {messages.length === 1 && userRole === 'admin' && (
                         <div className="flex flex-col items-center justify-center h-[50vh] text-center fade-in duration-500">
-                            <div className="bg-white p-4 rounded-full shadow-sm mb-6 border border-gray-100">
-                                <div className="text-4xl">🤖</div>
+                            <div className="bg-[#120e2b] p-6 rounded-full shadow-[0_0_30px_rgba(139,92,246,0.15)] mb-6 border border-purple-800/30 group hover:scale-105 transition-transform duration-500">
+                                <div className="text-5xl group-hover:-translate-y-1 transition-transform">🤖</div>
                             </div>
-                            <h2 className="text-3xl font-extrabold text-gray-900 mb-2 mt-4 max-w-lg mx-auto">Hola, Admin</h2>
-                            <h3 className="text-xl text-gray-500 max-w-md mx-auto">¿Qué métricas o datos vamos a consultar hoy?</h3>
+                            <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-400 mb-2 mt-4 max-w-lg mx-auto drop-shadow-sm">Hola, Admin</h2>
+                            <h3 className="text-xl text-indigo-200/60 max-w-md mx-auto font-light">¿Qué métricas o datos vamos a explorar hoy en la matriz?</h3>
                         </div>
                     )}
                     
@@ -82,11 +82,11 @@ export const ChatWindow = ({ userRole = 'customer' }) => {
                     ))}
 
                     {isLoading && (
-                        <div className="flex items-center space-x-2 text-gray-500 text-sm ml-4">
-                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
-                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-100" />
-                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-200" />
-                            <span>Consultando base de datos...</span>
+                        <div className="flex items-center space-x-2 text-purple-300 text-sm ml-4 mb-4">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-100 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-200 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                            <span className="font-medium ml-2">Sintetizando respuesta en la base de datos neuronal...</span>
                         </div>
                     )}
                     <div ref={messagesEndRef} />
