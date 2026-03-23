@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, TrendingUp, Sparkles, Bot } from 'lucide-react';
+import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, TrendingUp, Sparkles, Bot, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { ChatWindow } from '../widgets/chat/ui/ChatWindow';
 
 const AdminDashboard = () => {
@@ -98,15 +98,52 @@ const AdminDashboard = () => {
 
     const handleSave = async () => {
         try {
-            await axios.put(`http://localhost:8000/intelligence/products/${editingProduct.id}`, {
-                name: editingProduct.name,
-                description: editingProduct.description,
-                access_level: editingProduct.access_level
-            });
+            if (editingProduct.id) {
+                await axios.put(`http://localhost:8000/intelligence/products/${editingProduct.id}`, {
+                    name: editingProduct.name,
+                    description: editingProduct.description,
+                    access_level: editingProduct.access_level,
+                    price: parseFloat(editingProduct.price) || 0,
+                    stock: parseInt(editingProduct.stock) || 0,
+                    agent_instruction: editingProduct.agent_instruction || ''
+                });
+            } else {
+                await axios.post(`http://localhost:8000/intelligence/products`, {
+                    name: editingProduct.name,
+                    description: editingProduct.description,
+                    access_level: editingProduct.access_level,
+                    price: parseFloat(editingProduct.price) || 0,
+                    stock: parseInt(editingProduct.stock) || 0,
+                    agent_instruction: editingProduct.agent_instruction || ''
+                });
+            }
             setEditingProduct(null);
             fetchAllData();
         } catch (error) {
             alert("Error al guardar: " + error.message);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('¿Seguro que deseas eliminar este producto?')) return;
+        try {
+            await axios.delete(`http://localhost:8000/intelligence/products/${id}`);
+            fetchAllData();
+        } catch (error) {
+            alert("Error eliminando: " + error.message);
+        }
+    };
+
+    const handleAddNew = () => {
+        setEditingProduct({ name: '', description: '', access_level: 'private', price: 0, stock: 0, agent_instruction: '' });
+    };
+
+    const handleRecalculate = async (id) => {
+        try {
+            await axios.post(`http://localhost:8000/intelligence/products/${id}/recalculate`);
+            alert("Vector de IA recalculado con éxito para este producto.");
+        } catch (error) {
+            alert("Error recalculando vector: " + error.message);
         }
     };
 
@@ -132,7 +169,7 @@ const AdminDashboard = () => {
 
                         <nav className="flex space-x-8">
                             {[
-                                { id: 'inventory', label: 'Inventario', icon: Package },
+                                { id: 'inventory', label: 'Conocimiento (BD)', icon: Package },
                                 { id: 'sales', label: 'Ventas', icon: TrendingUp },
                                 { id: 'custom', label: 'Agente', icon: Bot },
                             ].map((tab) => (
@@ -275,8 +312,11 @@ const AdminDashboard = () => {
                 {activeTab === 'inventory' && (
                     <div className="animate-in fade-in duration-300">
                         <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-xl font-bold text-gray-800">Gestión de Inventario</h2>
+                            <h2 className="text-xl font-bold text-gray-800">Cerebro del Agente (Base de Conocimiento)</h2>
                             <div className="flex gap-4">
+                                <button onClick={handleAddNew} className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-200 transition font-bold shadow-sm">
+                                    <Plus size={18} /> Añadir Regla Manual
+                                </button>
                                 <button onClick={() => handleDownload('pdf')} className="bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-50 transition">
                                     <FileText size={18} /> PDF
                                 </button>
@@ -290,8 +330,9 @@ const AdminDashboard = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Producto</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Nivel de Acceso</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Concepto Sincronizado</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Visibilidad</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Instrucción IA (Oculta)</th>
                                         <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Acción</th>
                                     </tr>
                                 </thead>
@@ -308,9 +349,18 @@ const AdminDashboard = () => {
                                                     {product.access_level.toUpperCase()}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => handleEdit(product)} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition">
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-medium text-purple-700 max-w-[200px] truncate">{product.agent_instruction || <span className="text-gray-400 italic">Sin instrucción especial...</span>}</div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                <button onClick={() => handleRecalculate(product.id)} className="text-amber-500 hover:bg-amber-50 p-2 rounded-full transition" title="Recalcular Vector IA">
+                                                    <RefreshCw size={18} />
+                                                </button>
+                                                <button onClick={() => handleEdit(product)} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="Editar Contexto">
                                                     <Edit size={18} />
+                                                </button>
+                                                <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition" title="Eliminar Conocimiento">
+                                                    <Trash2 size={18} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -333,11 +383,11 @@ const AdminDashboard = () => {
             {editingProduct && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-                        <h2 className="text-2xl font-bold mb-6">Editar Producto</h2>
+                        <h2 className="text-2xl font-bold mb-6">{editingProduct.id ? 'Afinar Contexto del Asistente' : 'Añadir Regla Manual'}</h2>
 
-                        <div className="space-y-6">
+                        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Nombre del Producto</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Concepto (Ej. Producto)</label>
                                 <input
                                     type="text"
                                     value={editingProduct.name}
@@ -345,6 +395,50 @@ const AdminDashboard = () => {
                                     className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Descripción</label>
+                                <textarea
+                                    value={editingProduct.description || ''}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                    rows="2"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Precio ($)</label>
+                                    <input
+                                        type="number"
+                                        value={editingProduct.price || 0}
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })}
+                                        className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Stock Relevante</label>
+                                    <input
+                                        type="number"
+                                        value={editingProduct.stock || 0}
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })}
+                                        className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none hover:border-gray-300 transition"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                                <label className="block text-sm font-bold text-purple-900 mb-2 uppercase tracking-wide flex items-center gap-2">
+                                    <Bot size={16} /> Instrucción Oculta para el Agente (RAG)
+                                </label>
+                                <p className="text-xs text-purple-700 mb-2">Dicta cómo debe responder la IA cuando se mencione este concepto.</p>
+                                <textarea
+                                    value={editingProduct.agent_instruction || ''}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, agent_instruction: e.target.value })}
+                                    className="w-full border border-purple-200 rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none hover:border-purple-300 transition text-sm bg-white"
+                                    rows="3"
+                                    placeholder="Ej. 'Si el usuario pregunta por Alpha System, infórmale del 20% de descuento y prioriza soporte VIP.'"
+                                />
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Nivel de Visibilidad</label>
                                 <select
@@ -361,7 +455,7 @@ const AdminDashboard = () => {
                         <div className="mt-10 flex justify-end gap-4">
                             <button onClick={() => setEditingProduct(null)} className="px-6 py-3 font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
                             <button onClick={handleSave} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 flex items-center gap-2">
-                                <Save size={18} /> Guardar Cambios
+                                <Save size={18} /> {editingProduct.id ? 'Guardar Cambios' : 'Crear Producto'}
                             </button>
                         </div>
                     </div>

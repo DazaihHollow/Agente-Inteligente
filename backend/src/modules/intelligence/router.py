@@ -27,6 +27,17 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     access_level: Optional[str] = None
+    price: Optional[float] = None
+    stock: Optional[int] = None
+    agent_instruction: Optional[str] = None
+
+class ProductCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    access_level: Optional[str] = "private"
+    price: Optional[float] = 0.0
+    stock: Optional[int] = 0
+    agent_instruction: Optional[str] = None
 
 @router.put("/products/{product_id}")
 async def update_product(product_id: int, product: ProductUpdate, db: AsyncSession = Depends(get_db)):
@@ -57,6 +68,62 @@ async def update_product(product_id: int, product: ProductUpdate, db: AsyncSessi
     
     return {"status": "success", "message": "Producto actualizado correctamente"}
 
+@router.post("/products/{product_id}/recalculate")
+async def recalculate_vector(product_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Recalcula el embedding de un producto especifico.
+    """
+    from src.modules.intelligence.service import EmbeddingService
+    import json
+    
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+        
+    payload = {
+        "name": product.name,
+        "description": product.description,
+        "price": product.price,
+        "stock": product.stock
+    }
+    payload_str = json.dumps(payload)
+    
+    embedding_service = EmbeddingService()
+    vector = await embedding_service.generate(payload_str)
+    
+    product.embedding = vector
+    await db.commit()
+    
+    return {"status": "success", "message": "Vector de IA recalculado."}
+
+@router.post("/products")
+async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db)):
+    """
+    Crea un nuevo producto en el inventario.
+    """
+    new_product = Product(**product.model_dump())
+    db.add(new_product)
+    await db.commit()
+    await db.refresh(new_product)
+    return {"status": "success", "message": "Producto creado correctamente", "product_id": new_product.id}
+
+@router.delete("/products/{product_id}")
+async def delete_product(product_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Elimina un producto del inventario.
+    """
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    existing_product = result.scalar_one_or_none()
+    
+    if not existing_product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+        
+    await db.delete(existing_product)
+    await db.commit()
+    return {"status": "success", "message": "Producto eliminado"}
+
 @router.get("/products")
 async def list_products(db: AsyncSession = Depends(get_db)):
     """
@@ -72,7 +139,10 @@ async def list_products(db: AsyncSession = Depends(get_db)):
         Product.id, 
         Product.name, 
         Product.description, 
-        Product.access_level
+        Product.access_level,
+        Product.price,
+        Product.stock,
+        Product.agent_instruction
     )).order_by(Product.id)
     
     result = await db.execute(stmt)

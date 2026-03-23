@@ -76,7 +76,8 @@ class ChatService:
 
         # Se construye el contexto para la IA
         context_text = "\nInformacion de Productos:\n" + "\n".join([
-            f"- {p.name}: {p.description}" for p in similar_products
+            f"- {p.name}: {p.description}" + (f" [INSTRUCCIÓN INTERNA PARA EL ASISTENTE: {p.agent_instruction}]" if p.agent_instruction else "")
+            for p in similar_products
         ])
         
         if sales_context:

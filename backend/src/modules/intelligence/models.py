@@ -15,6 +15,13 @@ class Product(Base):
     
     # Control de Acceso: 'public' (Clientes) vs 'private' (Admin)
     access_level = Column(String, default='private')
+    
+    # Datos de Inventario
+    price = Column(Float, default=0.0)
+    stock = Column(Integer, default=0)
+    
+    # Fine-Tuning de IA
+    agent_instruction = Column(Text, nullable=True)
 
 class Sale(Base):
     __tablename__ = "sales"
