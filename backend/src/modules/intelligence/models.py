@@ -36,5 +36,6 @@ class Sale(Base):
     customer_type = Column(String) # Corporate / Individual
     customer_name = Column(String) # Nombre del cliente (para métricas netas)
     seller_name = Column(String) # Nombre del vendedor
+    payment_method = Column(String, nullable=True) # Cash, Card, Transfer, etc.
 
     product = relationship("Product")

@@ -36,7 +36,7 @@ class ContentProcessor:
 
                 if is_sale:
                     # --- PROCESAR VENTA ---
-                    product_name = payload_data.get('product_name', 'Producto Desconocido')
+                    product_name = payload_data.get('product_name', payload_data.get('Producto', 'Producto Desconocido'))
                     
                     # Buscar producto existente o crear uno base
                     if product_name in product_cache:
@@ -63,23 +63,50 @@ class ContentProcessor:
                         product_cache[product_name] = product_id
 
                     # Parsear fecha
-                    sale_date_str = payload_data.get('sale_date')
+                    sale_date_val = payload_data.get('sale_date', payload_data.get('Fecha'))
                     try:
-                        sale_date = datetime.strptime(sale_date_str, "%Y-%m-%d %H:%M:%S")
+                        if isinstance(sale_date_val, str):
+                            # Try multiple formats
+                            try:
+                                sale_date = datetime.strptime(sale_date_val, "%Y-%m-%d %H:%M:%S")
+                            except:
+                                try:
+                                    sale_date = datetime.strptime(sale_date_val, "%d/%m/%Y")
+                                except:
+                                    sale_date = datetime.utcnow()
+                        elif isinstance(sale_date_val, (int, float)):
+                            # Pandas might pass timestamp in ms
+                            sale_date = datetime.fromtimestamp(sale_date_val / 1000)
+                        else:
+                            sale_date = datetime.utcnow()
                     except:
                         sale_date = datetime.utcnow()
+
+                    # Mapear columnas dinamicamente (Soporta JSON manual o Excel)
+                    qty = payload_data.get('quantity', payload_data.get('Unidades', 1))
+                    ptotal = payload_data.get('price_total', payload_data.get('Coste Total', 0))
+                    cname = payload_data.get('customer_name', payload_data.get('Nombre', 'Cliente Genérico'))
+                    sname = payload_data.get('seller_name', payload_data.get('Empleado', 'Vendedor Sin Asignar'))
+                    pmethod = payload_data.get('payment_method', payload_data.get('Metodo de Pago'))
+                    
+                    # Convertir a numerico por consistencia
+                    try: qty = int(qty)
+                    except: qty = 1
+                    try: ptotal = float(ptotal)
+                    except: ptotal = 0.0
 
                     # Crear registro de venta
                     new_sale = Sale(
                         product_id=product_id,
-                        quantity=payload_data.get('quantity', 1),
-                        price_total=payload_data.get('price_total', 0),
+                        quantity=qty,
+                        price_total=ptotal,
                         sale_date=sale_date,
                         category=payload_data.get('category', 'General'),
                         region=payload_data.get('region', 'Global'),
                         customer_type=payload_data.get('customer_type', 'Individual'),
-                        customer_name=payload_data.get('customer_name', 'Cliente Genérico'),
-                        seller_name=payload_data.get('seller_name', 'Vendedor Sin Asignar')
+                        customer_name=cname,
+                        seller_name=sname,
+                        payment_method=pmethod
                     )
                     db.add(new_sale)
 

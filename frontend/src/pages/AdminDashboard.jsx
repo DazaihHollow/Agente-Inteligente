@@ -9,6 +9,7 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('sales'); // default to sales as requested
 
     // Inventory State
+    const [inventoryView, setInventoryView] = useState('knowledge'); // 'knowledge' | 'ingest'
     const [stats, setStats] = useState(null);
     const [products, setProducts] = useState([]);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -24,6 +25,14 @@ const AdminDashboard = () => {
     const [customQuery, setCustomQuery] = useState('');
     const [customData, setCustomData] = useState(null);
     const [customLoading, setCustomLoading] = useState(false);
+
+    // Ingestion UI State
+    const [isUploading, setIsUploading] = useState(false);
+    const [manualSale, setManualSale] = useState({
+        customer_name: '', product_name: '', quantity: 1, 
+        sale_date: new Date().toISOString().split('T')[0], price: 0, 
+        price_total: 0, payment_method: 'Card', seller_name: ''
+    });
 
     const [loading, setLoading] = useState(true);
 
@@ -162,7 +171,7 @@ const AdminDashboard = () => {
                     <div className="flex justify-between items-center h-20">
                         <div className="flex items-center gap-3">
                             <img src="/logo.png" alt="Epsilon Intelligence Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:scale-105 transition-transform" />
-                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-indigo-200 tracking-tight">Epsilon<span className="text-purple-400">Dash</span></h1>
+                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-indigo-200 tracking-tight">Epsilon <span className="text-purple-400">Intelligence</span></h1>
                         </div>
 
                         <nav className="flex space-x-8">
@@ -310,63 +319,212 @@ const AdminDashboard = () => {
                 {/* INVENTORY TAB */}
                 {activeTab === 'inventory' && (
                     <div className="animate-in fade-in duration-300">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-xl font-bold text-white drop-shadow-sm">Cerebro del Agente (Base de Conocimiento)</h2>
-                            <div className="flex gap-4">
-                                <button onClick={handleAddNew} className="bg-[#1a153a] text-purple-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#231d4d] border border-purple-800/50 hover:border-purple-500/50 transition font-bold shadow-sm">
-                                    <Plus size={18} /> Añadir Regla Manual
+                        {/* Sub-navigacion */}
+                        <div className="flex justify-center mb-8">
+                            <div className="bg-[#120e2b] p-1 rounded-xl border border-purple-900/30 inline-flex shadow-sm">
+                                <button 
+                                    onClick={() => setInventoryView('knowledge')}
+                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${inventoryView === 'knowledge' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-indigo-300/50 hover:text-white'}`}
+                                >
+                                    Gestión de Reglas (RAG)
                                 </button>
-                                <button onClick={() => handleDownload('pdf')} className="bg-[#120e2b] border border-red-900/50 text-red-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-900/20 transition">
-                                    <FileText size={18} /> PDF
-                                </button>
-                                <button onClick={() => handleDownload('excel')} className="bg-[#120e2b] border border-green-900/50 text-green-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-900/20 transition">
-                                    <Download size={18} /> Excel
+                                <button 
+                                    onClick={() => setInventoryView('ingest')}
+                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${inventoryView === 'ingest' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-indigo-300/50 hover:text-white'}`}
+                                >
+                                    Centro de Ingesta (Ventas)
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-[#120e2b] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 overflow-hidden">
-                            <table className="min-w-full divide-y divide-purple-900/30">
-                                <thead className="bg-[#0d0a20]">
-                                    <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Concepto Sincronizado</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Visibilidad</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Instrucción IA (Oculta)</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-purple-300 uppercase tracking-wider">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-[#120e2b] divide-y divide-purple-900/20">
-                                    {products.map((product) => (
-                                        <tr key={product.id} className="hover:bg-[#1a153a] transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="font-bold text-white">{product.name}</div>
-                                                <div className="text-xs text-indigo-200/70 truncate max-w-xs">{product.description}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${product.access_level === 'public' ? 'bg-green-900/30 text-green-400 border-green-800/50' : 'bg-red-900/30 text-red-400 border-red-800/50'
-                                                    }`}>
-                                                    {product.access_level.toUpperCase()}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-purple-300 max-w-[200px] truncate">{product.agent_instruction || <span className="text-indigo-300/50 italic">Sin instrucción especial...</span>}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                                <button onClick={() => handleRecalculate(product.id)} className="text-amber-500 hover:bg-amber-900/30 p-2 rounded-full transition" title="Recalcular Vector IA">
-                                                    <RefreshCw size={18} />
-                                                </button>
-                                                <button onClick={() => handleEdit(product)} className="text-purple-400 hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Contexto">
-                                                    <Edit size={18} />
-                                                </button>
-                                                <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full transition" title="Eliminar Conocimiento">
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        {inventoryView === 'knowledge' && (
+                            <div className="animate-in slide-in-from-left-4 duration-300">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-xl font-bold text-white drop-shadow-sm">Base de Conocimiento</h2>
+                                    <div className="flex gap-4">
+                                        <button onClick={handleAddNew} className="bg-[#1a153a] text-purple-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#231d4d] border border-purple-800/50 hover:border-purple-500/50 transition font-bold shadow-sm">
+                                            <Plus size={18} /> Añadir Regla Manual
+                                        </button>
+                                        <button onClick={() => handleDownload('pdf')} className="bg-[#120e2b] border border-red-900/50 text-red-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-900/20 transition">
+                                            <FileText size={18} /> PDF
+                                        </button>
+                                        <button onClick={() => handleDownload('excel')} className="bg-[#120e2b] border border-green-900/50 text-green-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-900/20 transition">
+                                            <Download size={18} /> Excel
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#120e2b] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 overflow-hidden">
+                                    <table className="min-w-full divide-y divide-purple-900/30">
+                                        <thead className="bg-[#0d0a20]">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Concepto Sincronizado</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Visibilidad</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Instrucción IA (Oculta)</th>
+                                                <th className="px-6 py-4 text-right text-xs font-bold text-purple-300 uppercase tracking-wider">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-[#120e2b] divide-y divide-purple-900/20">
+                                            {products.map((product) => (
+                                                <tr key={product.id} className="hover:bg-[#1a153a] transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-white">{product.name}</div>
+                                                        <div className="text-xs text-indigo-200/70 truncate max-w-xs">{product.description}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${product.access_level === 'public' ? 'bg-green-900/30 text-green-400 border-green-800/50' : 'bg-red-900/30 text-red-400 border-red-800/50'
+                                                            }`}>
+                                                            {product.access_level.toUpperCase()}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-medium text-purple-300 max-w-[200px] truncate">{product.agent_instruction || <span className="text-indigo-300/50 italic">Sin instrucción especial...</span>}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                        <button onClick={() => handleRecalculate(product.id)} className="text-amber-500 hover:bg-amber-900/30 p-2 rounded-full transition" title="Recalcular Vector IA">
+                                                            <RefreshCw size={18} />
+                                                        </button>
+                                                        <button onClick={() => handleEdit(product)} className="text-purple-400 hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Contexto">
+                                                            <Edit size={18} />
+                                                        </button>
+                                                        <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full transition" title="Eliminar Conocimiento">
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {inventoryView === 'ingest' && (
+                            <div className="animate-in slide-in-from-right-4 duration-300 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* PANEL 1: CARGA MASIVA (EXCEL/CSV) */}
+                                <div className="bg-[#120e2b] p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 flex flex-col items-center justify-center text-center">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-purple-900/50">
+                                        <Download className="text-white" size={32} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-2">Importación Masiva</h3>
+                                    <p className="text-indigo-200/70 mb-8 max-w-sm">
+                                        Sube un archivo Excel (.xlsx) o CSV con tu historial de ventas. La IA vectorizará automáticamente cada registro.
+                                    </p>
+                                    
+                                    <label className="w-full flex-col cursor-pointer">
+                                        <div className="w-full relative group">
+                                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                                            <div className="relative border-2 border-dashed border-purple-500/50 rounded-xl p-8 hover:bg-purple-900/10 transition-colors w-full flex flex-col items-center justify-center bg-[#0d0a20]">
+                                                <FileText className="text-purple-400 mb-3" size={32} />
+                                                <span className="text-purple-300 font-bold mb-1 block">Seleccionar Archivo</span>
+                                                <span className="text-xs text-indigo-400/60 block">Soporta .xlsx y .csv</span>
+                                                <input 
+                                                    type="file" 
+                                                    accept=".xlsx,.csv" 
+                                                    className="hidden" 
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files[0];
+                                                        if (!file) return;
+                                                        setIsUploading(true);
+                                                        const formData = new FormData();
+                                                        formData.append('file', file);
+                                                        try {
+                                                            const res = await axios.post('http://localhost:8000/ingestion/upload-sales', formData, {
+                                                                headers: { 'Content-Type': 'multipart/form-data' }
+                                                            });
+                                                            alert(res.data.message);
+                                                            fetchAllData();
+                                                        } catch(err) {
+                                                            alert('Error al subir el archivo: ' + err.message);
+                                                        }
+                                                        setIsUploading(false);
+                                                        e.target.value = '';
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                {/* PANEL 2: VENTA MANUAL */}
+                                <div className="bg-[#120e2b] p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30">
+                                    <h3 className="text-xl font-bold text-white mb-6 border-b border-purple-800/30 pb-4 flex items-center gap-3">
+                                        <Edit className="text-purple-400" /> Registro de Venta Manual
+                                    </h3>
+                                    
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        setIsUploading(true);
+                                        try {
+                                            const res = await axios.post('http://localhost:8000/ingestion/manual-sale', manualSale);
+                                            alert(res.data.message);
+                                            fetchAllData();
+                                            // Reset
+                                            setManualSale({
+                                                customer_name: '', product_name: '', quantity: 1, 
+                                                sale_date: new Date().toISOString().split('T')[0], price: 0, 
+                                                price_total: 0, payment_method: 'Card', seller_name: ''
+                                            });
+                                        } catch(err) {
+                                            alert("Error registrando: " + err.message);
+                                        }
+                                        setIsUploading(false);
+                                    }} className="grid grid-cols-2 gap-4">
+                                        
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Nombre (Empresa/Persona)</label>
+                                            <input required type="text" value={manualSale.customer_name} onChange={e=>setManualSale({...manualSale, customer_name: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Producto o Servicio</label>
+                                            <input required type="text" value={manualSale.product_name} onChange={e=>setManualSale({...manualSale, product_name: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Unidades</label>
+                                            <input required type="number" min="1" value={manualSale.quantity} onChange={e=>setManualSale({...manualSale, quantity: parseInt(e.target.value)})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                                        </div>
+                                        <div className="col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Fecha de Venta</label>
+                                            <input required type="date" value={manualSale.sale_date} onChange={e=>setManualSale({...manualSale, sale_date: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition [color-scheme:dark]" />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Costo Unidad ($)</label>
+                                            <input required type="number" step="0.01" value={manualSale.price} onChange={e=>{
+                                                const p = parseFloat(e.target.value);
+                                                setManualSale({...manualSale, price: p, price_total: p * manualSale.quantity});
+                                            }} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                                        </div>
+                                        <div className="col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Costo Total ($)</label>
+                                            <input required type="number" step="0.01" value={manualSale.price_total} onChange={e=>setManualSale({...manualSale, price_total: parseFloat(e.target.value)})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition font-bold text-purple-300" />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Método de Pago</label>
+                                            <select value={manualSale.payment_method} onChange={e=>setManualSale({...manualSale, payment_method: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition">
+                                                <option value="Card">Tarjeta (Deb/Cred)</option>
+                                                <option value="Transfer">Transferencia</option>
+                                                <option value="Cash">Efectivo</option>
+                                                <option value="Crypto">Criptomoneda</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Empleado</label>
+                                            <input required type="text" value={manualSale.seller_name} onChange={e=>setManualSale({...manualSale, seller_name: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                                        </div>
+
+                                        <div className="col-span-2 mt-4">
+                                            <button type="submit" disabled={isUploading} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-bold hover:from-purple-500 hover:to-blue-500 shadow-lg shadow-purple-900/50 flex items-center justify-center gap-2 border border-purple-500/50 transition relative overflow-hidden group">
+                                                <Save size={18} className="relative z-10" /> <span className="relative z-10">Registrar Venta e IA</span>
+                                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -460,6 +618,20 @@ const AdminDashboard = () => {
                             </button>
                         </div>
                     </div>
+        </div>
+            )}
+            
+            {/* Global Uploading Full Screen Blocking Overlay */}
+            {isUploading && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 z-[100]">
+                    <div className="relative">
+                        <img src="/logo.png" alt="Loading" className="w-24 h-24 object-contain animate-bounce drop-shadow-[0_0_30px_rgba(168,85,247,0.8)]" />
+                        <div className="absolute inset-0 border-4 border-transparent border-t-purple-500 border-b-blue-500 rounded-full animate-spin -m-4"></div>
+                    </div>
+                    <div className="mt-8 text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 animate-pulse">
+                        Vectorizando Conocimiento en la IA...
+                    </div>
+                    <p className="text-indigo-300/60 mt-2 font-medium">Por favor no cierres esta ventana.</p>
                 </div>
             )}
         </div>
