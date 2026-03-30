@@ -12,7 +12,12 @@ const AdminDashboard = () => {
     const [inventoryView, setInventoryView] = useState('menu'); // 'menu' | 'knowledge' | 'ingest' | 'products' | 'staff' | 'clients'
     const [stats, setStats] = useState(null);
     const [products, setProducts] = useState([]);
-    const [editingProduct, setEditingProduct] = useState(null);
+    const [editingProduct, setEditingProduct] = useState(null); // Used for RAG Rules
+    const [editingInventoryProduct, setEditingInventoryProduct] = useState(null); // Used for Catalog
+    const [staffList, setStaffList] = useState([]);
+    const [editingStaff, setEditingStaff] = useState(null);
+    const [clientsList, setClientsList] = useState([]);
+    const [editingClient, setEditingClient] = useState(null);
 
     // Sales State
     const [salesStats, setSalesStats] = useState(null);
@@ -96,18 +101,22 @@ const AdminDashboard = () => {
         setLoading(true);
         try {
             const timestamp = new Date().getTime();
-            const [statsRes, productsRes, salesRes, customersRes, registeredRes] = await Promise.all([
+            const [statsRes, productsRes, salesRes, customersRes, registeredRes, staffRes, clientsRes] = await Promise.all([
                 axios.get(`http://localhost:8000/reports/stats?_t=${timestamp}`),
                 axios.get(`http://localhost:8000/intelligence/products?_t=${timestamp}`),
                 axios.get(`http://localhost:8000/reports/sales?month=${selectedMonth}&year=${selectedYear}&customer_name=${selectedCustomer}&_t=${timestamp}`),
                 axios.get(`http://localhost:8000/reports/customers?_t=${timestamp}`),
-                axios.get(`http://localhost:8000/ingestion/sales?_t=${timestamp}`)
+                axios.get(`http://localhost:8000/ingestion/sales?_t=${timestamp}`),
+                axios.get(`http://localhost:8000/intelligence/staff?_t=${timestamp}`),
+                axios.get(`http://localhost:8000/intelligence/clients?_t=${timestamp}`)
             ]);
             setStats(statsRes.data);
             setProducts(productsRes.data);
             setSalesStats(salesRes.data);
             setCustomers(customersRes.data);
             setRegisteredSales(registeredRes.data || []);
+            setStaffList(staffRes.data || []);
+            setClientsList(clientsRes.data || []);
         } catch (error) {
             console.error("Error fetching admin data:", error);
         }
@@ -190,6 +199,7 @@ const AdminDashboard = () => {
                     access_level: editingProduct.access_level,
                     price: parseFloat(editingProduct.price) || 0,
                     stock: parseInt(editingProduct.stock) || 0,
+                    category: editingProduct.category || 'Hardware',
                     agent_instruction: editingProduct.agent_instruction || ''
                 });
             } else {
@@ -199,6 +209,7 @@ const AdminDashboard = () => {
                     access_level: editingProduct.access_level,
                     price: parseFloat(editingProduct.price) || 0,
                     stock: parseInt(editingProduct.stock) || 0,
+                    category: editingProduct.category || 'Hardware',
                     agent_instruction: editingProduct.agent_instruction || ''
                 });
             }
@@ -206,6 +217,36 @@ const AdminDashboard = () => {
             fetchAllData();
         } catch (error) {
             alert("Error al guardar: " + error.message);
+        }
+    };
+
+    const handleSaveInventory = async () => {
+        try {
+            if (editingInventoryProduct.id) {
+                await axios.put(`http://localhost:8000/intelligence/products/${editingInventoryProduct.id}`, {
+                    name: editingInventoryProduct.name,
+                    description: editingInventoryProduct.description,
+                    access_level: editingInventoryProduct.access_level,
+                    price: parseFloat(editingInventoryProduct.price) || 0,
+                    stock: parseInt(editingInventoryProduct.stock) || 0,
+                    category: editingInventoryProduct.category || 'Hardware',
+                    agent_instruction: editingInventoryProduct.agent_instruction || ''
+                });
+            } else {
+                await axios.post(`http://localhost:8000/intelligence/products`, {
+                    name: editingInventoryProduct.name,
+                    description: editingInventoryProduct.description,
+                    access_level: editingInventoryProduct.access_level,
+                    price: parseFloat(editingInventoryProduct.price) || 0,
+                    stock: parseInt(editingInventoryProduct.stock) || 0,
+                    category: editingInventoryProduct.category || 'Hardware',
+                    agent_instruction: editingInventoryProduct.agent_instruction || ''
+                });
+            }
+            setEditingInventoryProduct(null);
+            fetchAllData();
+        } catch (error) {
+            alert("Error al guardar producto: " + error.message);
         }
     };
 
@@ -219,8 +260,68 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleSaveStaff = async () => {
+        try {
+            if (editingStaff.id) {
+                await axios.put(`http://localhost:8000/intelligence/staff/${editingStaff.id}`, editingStaff);
+            } else {
+                await axios.post(`http://localhost:8000/intelligence/staff`, editingStaff);
+            }
+            setEditingStaff(null);
+            fetchAllData();
+        } catch (error) {
+            alert("Error al guardar empleado: " + error.message);
+        }
+    };
+
+    const handleDeleteStaff = async (id) => {
+        if (!window.confirm('¿Seguro que deseas eliminar el registro de este empleado?')) return;
+        try {
+            await axios.delete(`http://localhost:8000/intelligence/staff/${id}`);
+            fetchAllData();
+        } catch (error) {
+            alert("Error al eliminar empleado: " + error.message);
+        }
+    };
+
     const handleAddNew = () => {
-        setEditingProduct({ name: '', description: '', access_level: 'private', price: 0, stock: 0, agent_instruction: '' });
+        setEditingProduct({ name: '', description: '', access_level: 'private', price: 0, stock: 0, category: 'Hardware', agent_instruction: '' });
+    };
+
+    const handleAddNewInventory = () => {
+        setEditingInventoryProduct({ name: '', description: '', access_level: 'public', price: 0, stock: 0, category: 'Hardware', agent_instruction: '' });
+    };
+
+    const handleAddNewStaff = () => {
+        setEditingStaff({ name: '', role: 'Ejecutivo de Ventas', email: '', department: 'Ventas', status: 'Activo', monthly_goal: 0 });
+    };
+
+    const handleSaveClient = async () => {
+        try {
+            if (editingClient.id) {
+                await axios.put(`http://localhost:8000/intelligence/clients/${editingClient.id}`, editingClient);
+            } else {
+                await axios.post(`http://localhost:8000/intelligence/clients`, editingClient);
+            }
+            setEditingClient(null);
+            fetchAllData();
+        } catch (error) {
+            alert("Error al guardar cliente: " + error.message);
+        }
+    };
+
+    const handleDeleteClient = async (id) => {
+        if (!window.confirm('¿Seguro que deseas eliminar este cliente del directorio?')) return;
+        try {
+            await axios.delete(`http://localhost:8000/intelligence/clients/${id}`);
+            fetchAllData();
+        } catch (error) {
+            alert("Error al eliminar cliente: " + error.message);
+        }
+    };
+
+    const handleAddNewClient = () => {
+        setEditingClient({ name: '', contact_email: '', phone: '', customer_type: 'Corporativo (B2B)', industry: 'Tecnología', status: 'Prospecto', acquisition_channel: 'Sitio Web' });
     };
 
     const handleRecalculate = async (id) => {
@@ -925,16 +1026,51 @@ const AdminDashboard = () => {
                                     <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm flex items-center gap-2">
                                         <Package className="text-[var(--text-highlight)]" /> Catálogo Comercial
                                     </h2>
-                                    <button className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
+                                    <button onClick={handleAddNewInventory} className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
                                         <Plus size={18} /> Registrar Nuevo Producto
                                     </button>
                                 </div>
-                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden flex flex-col items-center justify-center min-h-[40vh] text-center p-10">
-                                    <div className="w-20 h-20 bg-[var(--bg-input)] rounded-full flex items-center justify-center mb-4 border border-[var(--border-strong)] text-[var(--text-sec)]">
-                                        <Package size={40} className="opacity-50" />
-                                    </div>
-                                    <h3 className="text-xl font-black text-[var(--text-main)] mb-2">Módulo en Construcción</h3>
-                                    <p className="text-[var(--text-muted)] max-w-sm text-sm">Próximamente podrás editar todo tu catálogo de hardware, software y servicios desde esta ubicación estructurada.</p>
+                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden">
+                                    <table className="min-w-full divide-y divide-purple-900/30">
+                                        <thead className="bg-[var(--bg-input)]">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Concepto Comercial</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Categoría</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Precio / Stock</th>
+                                                <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-[var(--bg-card)] divide-y divide-purple-900/20">
+                                            {products.filter(p => !p.agent_instruction || p.price > 0 || p.category).map((product) => (
+                                                <tr key={product.id} className="hover:bg-[var(--bg-item)] transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-[var(--text-main)]">{product.name}</div>
+                                                        <div className="text-xs text-[var(--text-muted)]/80 truncate max-w-xs">{product.description || 'Sin descripción...'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-3 py-1 rounded-full text-xs font-bold border bg-blue-900/30 text-blue-400 border-blue-800/50">
+                                                            {(product.category || 'Hardware').toUpperCase()}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-bold text-green-400">${product.price?.toFixed(2) || '0.00'}</div>
+                                                        <div className="text-xs text-[var(--text-accent)]">{product.stock || 0} unid(s).</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                        <button onClick={() => setEditingInventoryProduct({...product})} className="text-[var(--text-highlight)] hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Producto">
+                                                            <Edit size={18} />
+                                                        </button>
+                                                        <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full transition" title="Eliminar Producto">
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {products.filter(p => !p.agent_instruction || p.price > 0).length === 0 && (
+                                                <tr><td colSpan="4" className="px-6 py-10 text-center text-[var(--text-sec)]">Aún no hay productos registrados.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         )}
@@ -944,18 +1080,55 @@ const AdminDashboard = () => {
                             <div className="animate-in slide-in-from-right-4 duration-300">
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm flex items-center gap-2">
-                                        <Briefcase className="text-[var(--text-highlight)]" /> Gestión de Representantes
+                                        <Briefcase className="text-[var(--text-highlight)]" /> Gestión de Representantes y Staff
                                     </h2>
-                                    <button className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
+                                    <button onClick={handleAddNewStaff} className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
                                         <Plus size={18} /> Incorporar Empleado
                                     </button>
                                 </div>
-                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden flex flex-col items-center justify-center min-h-[40vh] text-center p-10">
-                                    <div className="w-20 h-20 bg-[var(--bg-input)] rounded-full flex items-center justify-center mb-4 border border-[var(--border-strong)] text-[var(--text-sec)]">
-                                        <Briefcase size={40} className="opacity-50" />
-                                    </div>
-                                    <h3 className="text-xl font-black text-[var(--text-main)] mb-2">Módulo en Construcción</h3>
-                                    <p className="text-[var(--text-muted)] max-w-sm text-sm">Aquí se listarán todos tus vendedores y ejecutivos corporativos para asignarles metas, monitoreos y métricas clave.</p>
+                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden">
+                                    <table className="min-w-full divide-y divide-purple-900/30">
+                                        <thead className="bg-[var(--bg-input)]">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Identidad</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Cargo & Departamento</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Desempeño & Estado</th>
+                                                <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-[var(--bg-card)] divide-y divide-purple-900/20">
+                                            {staffList.map((st) => (
+                                                <tr key={st.id} className="hover:bg-[var(--bg-item)] transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-[var(--text-main)]">{st.name}</div>
+                                                        <div className="text-xs text-[var(--text-muted)] truncate">{st.email}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-bold text-[var(--text-main)]">{st.role}</div>
+                                                        <div className="text-xs text-[var(--text-accent)]">Dpto: {st.department}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <div className={`w-2 h-2 rounded-full ${st.status === 'Activo' ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                                                            <span className="text-sm font-bold text-[var(--text-main)]">{st.status}</span>
+                                                        </div>
+                                                        <div className="text-xs text-[var(--text-muted)]">Meta: <span className="text-blue-400 font-bold">${st.monthly_goal}</span>/mes</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                        <button onClick={() => setEditingStaff({...st})} className="text-[var(--text-highlight)] hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Empleado">
+                                                            <Edit size={18} />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteStaff(st.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full transition" title="Eliminar Archivo">
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {staffList.length === 0 && (
+                                                <tr><td colSpan="4" className="px-6 py-10 text-center text-[var(--text-sec)]">No hay personal registrado.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         )}
@@ -965,18 +1138,58 @@ const AdminDashboard = () => {
                             <div className="animate-in slide-in-from-right-4 duration-300">
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm flex items-center gap-2">
-                                        <Users className="text-[var(--text-highlight)]" /> Directorio de Clientes
+                                        <Users className="text-[var(--text-highlight)]" /> Directorio de Clientes y CRM
                                     </h2>
-                                    <button className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
-                                        <Plus size={18} /> Añadir Cliente B2B
+                                    <button onClick={handleAddNewClient} className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
+                                        <Plus size={18} /> Añadir Cliente B2B/B2C
                                     </button>
                                 </div>
-                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden flex flex-col items-center justify-center min-h-[40vh] text-center p-10">
-                                    <div className="w-20 h-20 bg-[var(--bg-input)] rounded-full flex items-center justify-center mb-4 border border-[var(--border-strong)] text-[var(--text-sec)]">
-                                        <Users size={40} className="opacity-50" />
-                                    </div>
-                                    <h3 className="text-xl font-black text-[var(--text-main)] mb-2">Módulo en Construcción</h3>
-                                    <p className="text-[var(--text-muted)] max-w-sm text-sm">Pronto podrás gestionar aquí el Customer Success de tu equipo de ventas y almacenar bases B2B avanzadas.</p>
+                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden">
+                                    <table className="min-w-full divide-y divide-purple-900/30">
+                                        <thead className="bg-[var(--bg-input)]">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Perfil Comercial</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Sector / Industria</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Pipeline (Estado)</th>
+                                                <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-[var(--bg-card)] divide-y divide-purple-900/20">
+                                            {clientsList.map((client) => (
+                                                <tr key={client.id} className="hover:bg-[var(--bg-item)] transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-[var(--text-main)]">{client.name}</div>
+                                                        <div className="text-xs text-[var(--text-muted)] truncate">{client.contact_email}</div>
+                                                        <div className="text-xs text-[var(--text-muted)] truncate">{client.phone}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-3 py-1 rounded-full text-xs font-bold border bg-purple-900/30 text-[var(--text-highlight)] border-purple-800/50">
+                                                            {client.customer_type}
+                                                        </span>
+                                                        <div className="text-xs text-[var(--text-muted)] mt-2">Ind: {client.industry}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <div className={`w-2 h-2 rounded-full ${client.status === 'Cliente Activo' ? 'bg-green-400' : client.status === 'Prospecto' ? 'bg-orange-400' : 'bg-red-400'}`}></div>
+                                                            <span className="text-sm font-bold text-[var(--text-main)]">{client.status}</span>
+                                                        </div>
+                                                        <div className="text-xs text-[var(--text-muted)]">Origen: {client.acquisition_channel}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                        <button onClick={() => setEditingClient({...client})} className="text-[var(--text-highlight)] hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Cliente">
+                                                            <Edit size={18} />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteClient(client.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full transition" title="Eliminar Archivo">
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {clientsList.length === 0 && (
+                                                <tr><td colSpan="4" className="px-6 py-10 text-center text-[var(--text-sec)]">Aún no has registrado clientes ni prospectos.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         )}
@@ -1046,7 +1259,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Rule Assignment Slide-over Drawer */}
+            {/* Rule Assignment Slide-over Drawer (RAG Knowledge) */}
             {editingProduct && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity">
                     <div className="fixed inset-y-0 right-0 w-full md:w-[450px] lg:w-[500px] bg-[var(--bg-card)] shadow-[[-10px_0_40px_rgba(0,0,0,0.5)]] border-l border-[var(--border-strong)] transform transition-transform duration-500 flex flex-col animate-in slide-in-from-right">
@@ -1065,13 +1278,15 @@ const AdminDashboard = () => {
                         {/* Drawer Body - Form */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[var(--bg-main)]/30">
                             <div>
-                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Concepto o Elemento Relacionado</label>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">
+                                    Concepto o Elemento Relacionado
+                                </label>
                                 <input
                                     type="text"
                                     value={editingProduct.name}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                                     className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner font-medium placeholder-[var(--text-sec)]/30"
-                                    placeholder="Ej: Análisis de Ventas, Modelo Laptop..."
+                                    placeholder="Ej: Análisis de Ventas, Política de Reembolso..."
                                 />
                             </div>
                             
@@ -1142,7 +1357,334 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+
+            {/* Catalog/Inventory Slide-over Drawer (Products) */}
+            {editingInventoryProduct && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity">
+                    <div className="fixed inset-y-0 right-0 w-full md:w-[450px] lg:w-[500px] bg-[var(--bg-card)] shadow-[[-10px_0_40px_rgba(0,0,0,0.5)]] border-l border-[var(--border-strong)] transform transition-transform duration-500 flex flex-col animate-in slide-in-from-right">
+                        
+                        {/* Drawer Header */}
+                        <div className="flex justify-between items-center p-6 border-b border-[var(--border-base)] bg-[var(--bg-input)]">
+                            <h2 className="text-xl font-black text-[var(--text-main)] drop-shadow-sm flex items-center gap-3">
+                                <Package className="text-[var(--text-highlight)]" size={24} />
+                                {editingInventoryProduct.id ? 'Modificar Producto' : 'Registro de Producto'}
+                            </h2>
+                            <button onClick={() => setEditingInventoryProduct(null)} className="text-[var(--text-sec)] hover:text-red-400 bg-[var(--bg-item)] hover:bg-red-500/10 p-2 rounded-full transition-colors border border-[var(--border-faint)]">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Drawer Body - Form */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[var(--bg-main)]/30">
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">
+                                    Nombre del Producto / Servicio
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editingInventoryProduct.name}
+                                    onChange={(e) => setEditingInventoryProduct({ ...editingInventoryProduct, name: e.target.value })}
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner font-medium placeholder-[var(--text-sec)]/30"
+                                    placeholder="Ej: Laptop Dell XPS 15..."
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Descripción Comercial</label>
+                                <textarea
+                                    value={editingInventoryProduct.description || ''}
+                                    onChange={(e) => setEditingInventoryProduct({ ...editingInventoryProduct, description: e.target.value })}
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner resize-none placeholder-[var(--text-sec)]/30"
+                                    rows="4"
+                                    placeholder="Descripción técnica o comercial para catálogos..."
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Categoría</label>
+                                    <select
+                                        value={editingInventoryProduct.category || 'Hardware'}
+                                        onChange={(e) => setEditingInventoryProduct({ ...editingInventoryProduct, category: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-medium"
+                                    >
+                                        <option value="Hardware">Hardware</option>
+                                        <option value="Software">Software</option>
+                                        <option value="Servicios">Servicios</option>
+                                    </select>
+                                </div>
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Disponibilidad</label>
+                                    <select
+                                        value={editingInventoryProduct.access_level || 'public'}
+                                        onChange={(e) => setEditingInventoryProduct({ ...editingInventoryProduct, access_level: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-medium"
+                                    >
+                                        <option value="public">Visible (Público)</option>
+                                        <option value="private">Oculto (Archivo)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Precio Base ($)</label>
+                                    <input
+                                        type="number"
+                                        value={editingInventoryProduct.price || 0}
+                                        onChange={(e) => setEditingInventoryProduct({ ...editingInventoryProduct, price: parseFloat(e.target.value) })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm font-bold outline-none focus:border-[var(--border-hover-alt)] transition"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Stock Unitario</label>
+                                    <input
+                                        type="number"
+                                        value={editingInventoryProduct.stock || 0}
+                                        onChange={(e) => setEditingInventoryProduct({ ...editingInventoryProduct, stock: parseInt(e.target.value) })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm font-bold outline-none focus:border-[var(--border-hover-alt)] transition"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Drawer Footer */}
+                        <div className="p-6 border-t border-[var(--border-strong)] bg-[var(--bg-card)] flex flex-col gap-3 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
+                            <button onClick={handleSaveInventory} className="w-full bg-gradient-to-r from-[var(--btn-start)] to-[var(--btn-end)] text-[var(--text-main)] px-5 py-3.5 rounded-xl font-black uppercase text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                <Save size={18} /> Guardar Producto
+                            </button>
+                            {editingInventoryProduct.id && (
+                                <button onClick={() => { handleDelete(editingInventoryProduct.id); setEditingInventoryProduct(null); }} className="w-full border border-red-500/30 text-red-400 hover:bg-red-500/10 px-5 py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2">
+                                    <Trash2 size={16} /> Eliminar Producto
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Staff Slide-over Drawer */}
+            {editingStaff && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity">
+                    <div className="fixed inset-y-0 right-0 w-full md:w-[450px] lg:w-[500px] bg-[var(--bg-card)] shadow-[[-10px_0_40px_rgba(0,0,0,0.5)]] border-l border-[var(--border-strong)] transform transition-transform duration-500 flex flex-col animate-in slide-in-from-right">
+                        
+                        {/* Drawer Header */}
+                        <div className="flex justify-between items-center p-6 border-b border-[var(--border-base)] bg-[var(--bg-input)]">
+                            <h2 className="text-xl font-black text-[var(--text-main)] drop-shadow-sm flex items-center gap-3">
+                                <Users className="text-[var(--text-highlight)]" size={24} />
+                                {editingStaff.id ? 'Modificar Empleado' : 'Nuevo Empleado'}
+                            </h2>
+                            <button onClick={() => setEditingStaff(null)} className="text-[var(--text-sec)] hover:text-red-400 bg-[var(--bg-item)] hover:bg-red-500/10 p-2 rounded-full transition-colors border border-[var(--border-faint)]">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Drawer Body - Form */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[var(--bg-main)]/30">
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Nombre Completo</label>
+                                <input
+                                    type="text"
+                                    value={editingStaff.name}
+                                    onChange={(e) => setEditingStaff({ ...editingStaff, name: e.target.value })}
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner font-medium placeholder-[var(--text-sec)]/30"
+                                    placeholder="Ej: Laura Pérez..."
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Correo Corporativo</label>
+                                <input
+                                    type="email"
+                                    value={editingStaff.email}
+                                    onChange={(e) => setEditingStaff({ ...editingStaff, email: e.target.value })}
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner font-medium placeholder-[var(--text-sec)]/30"
+                                    placeholder="ejemplo@empresa.com"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Departamento</label>
+                                    <select
+                                        value={editingStaff.department || 'Ventas'}
+                                        onChange={(e) => setEditingStaff({ ...editingStaff, department: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-medium"
+                                    >
+                                        <option value="Ventas">Ventas</option>
+                                        <option value="Soporte Técnico">Soporte Técnico</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Operaciones">Operaciones</option>
+                                    </select>
+                                </div>
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Cargo</label>
+                                    <input
+                                        type="text"
+                                        value={editingStaff.role || ''}
+                                        onChange={(e) => setEditingStaff({ ...editingStaff, role: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition font-medium"
+                                        placeholder="Ej: Ejecutivo Senior"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Estado Laboral</label>
+                                    <select
+                                        value={editingStaff.status || 'Activo'}
+                                        onChange={(e) => setEditingStaff({ ...editingStaff, status: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-bold"
+                                        style={{ color: editingStaff.status === 'Activo' ? '#4ade80' : '#f87171' }}
+                                    >
+                                        <option value="Activo">Activo ✅</option>
+                                        <option value="Inactivo">Inactivo ❌</option>
+                                        <option value="Vacaciones">Vacaciones 🌴</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider" title="Objetivo de facturación mensual esperado">KPI Meta ($)</label>
+                                    <input
+                                        type="number"
+                                        value={editingStaff.monthly_goal || 0}
+                                        onChange={(e) => setEditingStaff({ ...editingStaff, monthly_goal: parseFloat(e.target.value) })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm font-bold outline-none focus:border-[var(--border-hover-alt)] transition"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Drawer Footer */}
+                        <div className="p-6 border-t border-[var(--border-strong)] bg-[var(--bg-card)] flex flex-col gap-3 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
+                            <button onClick={handleSaveStaff} className="w-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-5 py-3.5 rounded-xl font-black uppercase text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                <Briefcase size={18} /> Guardar Expediente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Client Slide-over Drawer */}
+            {editingClient && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity">
+                    <div className="fixed inset-y-0 right-0 w-full md:w-[450px] lg:w-[500px] bg-[var(--bg-card)] shadow-[[-10px_0_40px_rgba(0,0,0,0.5)]] border-l border-[var(--border-strong)] transform transition-transform duration-500 flex flex-col animate-in slide-in-from-right">
+                        
+                        {/* Drawer Header */}
+                        <div className="flex justify-between items-center p-6 border-b border-[var(--border-base)] bg-[var(--bg-input)]">
+                            <h2 className="text-xl font-black text-[var(--text-main)] drop-shadow-sm flex items-center gap-3">
+                                <Users className="text-[var(--text-highlight)]" size={24} />
+                                {editingClient.id ? 'Modificar Cliente' : 'Nuevo Cliente'}
+                            </h2>
+                            <button onClick={() => setEditingClient(null)} className="text-[var(--text-sec)] hover:text-red-400 bg-[var(--bg-item)] hover:bg-red-500/10 p-2 rounded-full transition-colors border border-[var(--border-faint)]">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Drawer Body - Form */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[var(--bg-main)]/30">
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Nombre del Cliente / Empresa</label>
+                                <input
+                                    type="text"
+                                    value={editingClient.name}
+                                    onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner font-bold placeholder-[var(--text-sec)]/30"
+                                    placeholder="Ej: Tech Solutions Corp..."
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Correo Principal</label>
+                                    <input
+                                        type="email"
+                                        value={editingClient.contact_email}
+                                        onChange={(e) => setEditingClient({ ...editingClient, contact_email: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors text-sm font-medium placeholder-[var(--text-sec)]/30"
+                                        placeholder="ejemplo@empresa.com"
+                                    />
+                                </div>
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Teléfono</label>
+                                    <input
+                                        type="text"
+                                        value={editingClient.phone}
+                                        onChange={(e) => setEditingClient({ ...editingClient, phone: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors text-sm font-medium placeholder-[var(--text-sec)]/30"
+                                        placeholder="+1 555-0123"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Tipo de Cliente</label>
+                                    <select
+                                        value={editingClient.customer_type}
+                                        onChange={(e) => setEditingClient({ ...editingClient, customer_type: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-medium"
+                                    >
+                                        <option value="Corporativo (B2B)">Corporativo (B2B)</option>
+                                        <option value="Particular (B2C)">Particular (B2C)</option>
+                                        <option value="Gubernamental">Gubernamental</option>
+                                        <option value="ONG / Sin fines de lucro">ONG / Sin fines de lucro</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Industria</label>
+                                    <select
+                                        value={editingClient.industry}
+                                        onChange={(e) => setEditingClient({ ...editingClient, industry: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-medium"
+                                    >
+                                        <option value="Tecnología">Tecnología</option>
+                                        <option value="Finanzas">Finanzas</option>
+                                        <option value="Salud">Salud</option>
+                                        <option value="Retail / eCommerce">Retail / eCommerce</option>
+                                        <option value="Educación">Educación</option>
+                                        <option value="Industria / Manufactura">Industria / Manufactura</option>
+                                        <option value="Otros">Otros</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Estado Comercial</label>
+                                    <select
+                                        value={editingClient.status}
+                                        onChange={(e) => setEditingClient({ ...editingClient, status: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-bold"
+                                        style={{ color: editingClient.status === 'Cliente Activo' ? '#4ade80' : editingClient.status === 'Prospecto' ? '#fb923c' : '#f87171' }}
+                                    >
+                                        <option value="Prospecto">Prospecto ⏳</option>
+                                        <option value="Cliente Activo">Cliente Activo ✨</option>
+                                        <option value="Inactivo / Perdido">Inactivo / Perdido 🚫</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Canal de Ingreso</label>
+                                    <select
+                                        value={editingClient.acquisition_channel}
+                                        onChange={(e) => setEditingClient({ ...editingClient, acquisition_channel: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-medium"
+                                    >
+                                        <option value="Sitio Web">Sitio Web</option>
+                                        <option value="Redes Sociales">Redes Sociales</option>
+                                        <option value="Referido">Referido</option>
+                                        <option value="Llamada en Frío">Llamada en Frío</option>
+                                        <option value="Campaña / Evento">Campaña / Evento</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Drawer Footer */}
+                        <div className="p-6 border-t border-[var(--border-strong)] bg-[var(--bg-card)] flex flex-col gap-3 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
+                            <button onClick={handleSaveClient} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3.5 rounded-xl font-black uppercase text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all border border-blue-400/30">
+                                <Users size={18} /> Consolidar Cliente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             
+
             {/* Global Uploading Full Screen Blocking Overlay */}
             {isUploading && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 z-[100]">
