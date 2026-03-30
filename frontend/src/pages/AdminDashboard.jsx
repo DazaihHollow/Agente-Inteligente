@@ -59,12 +59,21 @@ const AdminDashboard = () => {
         return `${prefix}${val.toLocaleString(locale, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     };
 
+    const calcTotal = (saleObj) => {
+        let subtotal = (parseFloat(saleObj.price) || 0) * (parseInt(saleObj.quantity) || 1);
+        let afterDisc = Math.max(0, subtotal - (parseFloat(saleObj.discount_amount) || 0));
+        let ivaMultiplier = 1 + ((parseFloat(saleObj.iva_percent) || 0) / 100);
+        let total = afterDisc * ivaMultiplier;
+        return parseFloat(total.toFixed(2));
+    };
+
     // Ingestion UI State
     const [isUploading, setIsUploading] = useState(false);
     const [manualSale, setManualSale] = useState({
         customer_name: '', product_name: '', quantity: 1, 
         sale_date: new Date().toISOString().split('T')[0], price: 0, 
-        price_total: 0, payment_method: 'Card', seller_name: '', category: 'Hardware'
+        price_total: 0, payment_method: 'Card', seller_name: '', category: 'Hardware',
+        iva_percent: 16, discount_amount: 0
     });
     
     // Histórico
@@ -885,7 +894,7 @@ const AdminDashboard = () => {
                                             setManualSale({
                                                 customer_name: '', product_name: '', quantity: 1, 
                                                 sale_date: new Date().toISOString().split('T')[0], price: 0, 
-                                                price_total: 0, payment_method: 'Card', seller_name: '', category: 'Hardware'
+                                                price_total: 0, payment_method: 'Card', seller_name: '', category: 'Hardware', iva_percent: 16, discount_amount: 0
                                             });
                                         } catch(err) {
                                             alert("Error registrando: " + err.message);
@@ -895,35 +904,77 @@ const AdminDashboard = () => {
                                         
                                         <div className="col-span-2 md:col-span-1">
                                             <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Nombre (Empresa/Persona)</label>
-                                            <input required type="text" value={manualSale.customer_name} onChange={e=>setManualSale({...manualSale, customer_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
+                                            <select required value={manualSale.customer_name} onChange={e=>setManualSale({...manualSale, customer_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
+                                                <option value="" disabled>Seleccione un cliente registrado...</option>
+                                                {clientsList.map(c => (
+                                                    <option key={c.id} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div className="col-span-2 md:col-span-1">
                                             <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Producto o Servicio</label>
-                                            <input required type="text" value={manualSale.product_name} onChange={e=>setManualSale({...manualSale, product_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
+                                            <select required value={manualSale.product_name} onChange={(e) => {
+                                                const selectedProd = products.find(p => p.name === e.target.value);
+                                                if(selectedProd) {
+                                                    const updated = {
+                                                        ...manualSale, 
+                                                        product_name: selectedProd.name,
+                                                        price: selectedProd.price || 0,
+                                                        category: selectedProd.category || 'Hardware'
+                                                    };
+                                                    setManualSale({...updated, price_total: calcTotal(updated)});
+                                                } else {
+                                                    setManualSale({...manualSale, product_name: e.target.value});
+                                                }
+                                            }} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
+                                                <option value="" disabled>Seleccione del catálogo...</option>
+                                                {products.filter(p => !p.agent_instruction || p.price > 0).map(p => (
+                                                    <option key={p.id} value={p.name}>{p.name}</option>
+                                                ))}
+                                            </select>
                                         </div>
 
-                                        <div className="col-span-1">
+                                        <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
                                             <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Unidades</label>
                                             <input required type="number" min="1" value={manualSale.quantity} onChange={e=>{
                                                 const q = parseInt(e.target.value) || 1;
-                                                setManualSale({...manualSale, quantity: q, price_total: manualSale.price * q});
+                                                const updated = {...manualSale, quantity: q};
+                                                setManualSale({...updated, price_total: calcTotal(updated)});
                                             }} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
                                         </div>
-                                        <div className="col-span-1">
-                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Fecha de Venta</label>
-                                            <input required type="date" value={manualSale.sale_date} onChange={e=>setManualSale({...manualSale, sale_date: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition [color-scheme:dark]" />
-                                        </div>
-
                                         <div className="col-span-1">
                                             <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Costo Unidad ($)</label>
                                             <input required type="number" step="0.01" value={manualSale.price} onChange={e=>{
-                                                const p = parseFloat(e.target.value);
-                                                setManualSale({...manualSale, price: p, price_total: p * manualSale.quantity});
+                                                const p = parseFloat(e.target.value) || 0;
+                                                const updated = {...manualSale, price: p};
+                                                setManualSale({...updated, price_total: calcTotal(updated)});
                                             }} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
                                         </div>
+
+                                        <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
+                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1 text-orange-400">Descuento ($)</label>
+                                            <input type="number" step="0.01" value={manualSale.discount_amount} onChange={e=>{
+                                                const d = parseFloat(e.target.value) || 0;
+                                                const updated = {...manualSale, discount_amount: d};
+                                                setManualSale({...updated, price_total: calcTotal(updated)});
+                                            }} className="w-full bg-[var(--bg-input)] border border-orange-500/30 text-[var(--text-main)] rounded-lg p-2.5 focus:border-orange-500/80 outline-none transition" />
+                                        </div>
+                                        <div className="col-span-1 flex flex-col justify-center mt-2 border-r border-[var(--border-faint)] pr-4">
+                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1 text-purple-400">IVA (%)</label>
+                                            <input type="number" step="0.5" value={manualSale.iva_percent !== undefined ? manualSale.iva_percent : 16} onChange={e=>{
+                                                const iva = parseFloat(e.target.value) || 0;
+                                                const updated = {...manualSale, iva_percent: iva};
+                                                setManualSale({...updated, price_total: calcTotal(updated)});
+                                            }} className="w-full bg-[var(--bg-input)] border border-purple-500/30 text-[var(--text-main)] rounded-lg p-2.5 focus:border-purple-500/80 outline-none transition" />
+                                        </div>
+
+                                        <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
+                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Fecha de Venta</label>
+                                            <input required type="date" value={manualSale.sale_date} onChange={e=>setManualSale({...manualSale, sale_date: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition [color-scheme:dark]" />
+                                        </div>
                                         <div className="col-span-1">
-                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Costo Total ($)</label>
-                                            <input required type="number" step="0.01" value={manualSale.price_total} onChange={e=>setManualSale({...manualSale, price_total: parseFloat(e.target.value)})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition font-bold text-[var(--text-accent)]" />
+                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1 text-green-400">Total a Facturar ($)</label>
+                                            <input required type="number" step="0.01" value={manualSale.price_total} readOnly className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 outline-none font-black text-green-400 text-lg cursor-not-allowed opacity-90 shadow-inner" title="El total se calcula automáticamente" />
                                         </div>
 
                                         <div className="col-span-1">
@@ -936,16 +987,17 @@ const AdminDashboard = () => {
                                             </select>
                                         </div>
                                         <div className="col-span-2 md:col-span-1">
-                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Categoría</label>
-                                            <select value={manualSale.category} onChange={e=>setManualSale({...manualSale, category: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
-                                                <option value="Hardware">Hardware</option>
-                                                <option value="Software">Software</option>
-                                                <option value="Servicios">Servicios</option>
-                                            </select>
+                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Categoría Auto-asignada</label>
+                                            <input value={manualSale.category} disabled className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-muted)] rounded-lg p-2.5 outline-none font-medium cursor-not-allowed opacity-70" />
                                         </div>
                                         <div className="col-span-2 md:col-span-1">
-                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Empleado</label>
-                                            <input required type="text" value={manualSale.seller_name} onChange={e=>setManualSale({...manualSale, seller_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
+                                            <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Empleado Involucrado</label>
+                                            <select required value={manualSale.seller_name} onChange={e=>setManualSale({...manualSale, seller_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
+                                                <option value="" disabled>Seleccione el responsable...</option>
+                                                {staffList.filter(s => s.status === 'Activo').map(s => (
+                                                    <option key={s.id} value={s.name}>{s.name} ({s.department})</option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div className="col-span-2 mt-4">
@@ -1213,42 +1265,100 @@ const AdminDashboard = () => {
                         <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                             <div className="col-span-2 md:col-span-1">
                                 <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Cliente</label>
-                                <input type="text" value={editingSale.customer_name} onChange={e=>setEditingSale({...editingSale, customer_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
+                                <select value={editingSale.customer_name} onChange={e=>setEditingSale({...editingSale, customer_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
+                                    <option value="" disabled>Seleccione un cliente registrado...</option>
+                                    {clientsList.map(c => (
+                                        <option key={c.id} value={c.name}>{c.name}</option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="col-span-2 md:col-span-1">
                                 <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Producto</label>
-                                <input type="text" value={editingSale.product_name} onChange={e=>setEditingSale({...editingSale, product_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
+                                <select value={editingSale.product_name} onChange={(e) => {
+                                    const selectedProd = products.find(p => p.name === e.target.value);
+                                    if(selectedProd) {
+                                        const updated = {
+                                            ...editingSale, 
+                                            product_name: selectedProd.name,
+                                            price: selectedProd.price || 0,
+                                            category: selectedProd.category || 'Hardware'
+                                        };
+                                        setEditingSale({...updated, price_total: calcTotal(updated)});
+                                    } else {
+                                        setEditingSale({...editingSale, product_name: e.target.value});
+                                    }
+                                }} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
+                                    <option value="" disabled>Seleccione del catálogo...</option>
+                                    {products.filter(p => !p.agent_instruction || p.price > 0).map(p => (
+                                        <option key={p.id} value={p.name}>{p.name}</option>
+                                    ))}
+                                </select>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Cantidad</label>
+
+                            <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
+                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Unidades</label>
                                 <input type="number" min="1" value={editingSale.quantity} onChange={e=>{
                                     const q = parseInt(e.target.value) || 1;
-                                    setEditingSale({...editingSale, quantity: q, price_total: editingSale.price * q});
+                                    const updated = {...editingSale, quantity: q};
+                                    setEditingSale({...updated, price_total: calcTotal(updated)});
                                 }} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
                             </div>
-                            <div>
+                            <div className="col-span-1">
+                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Costo Unitario ($)</label>
+                                <input type="number" step="0.01" value={editingSale.price || 0} onChange={e=>{
+                                    const p = parseFloat(e.target.value) || 0;
+                                    const updated = {...editingSale, price: p};
+                                    setEditingSale({...updated, price_total: calcTotal(updated)});
+                                }} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none font-bold transition" />
+                            </div>
+
+                            <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
+                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1 text-orange-400">Descuento ($)</label>
+                                <input type="number" step="0.01" value={editingSale.discount_amount || 0} onChange={e=>{
+                                    const d = parseFloat(e.target.value) || 0;
+                                    const updated = {...editingSale, discount_amount: d};
+                                    setEditingSale({...updated, price_total: calcTotal(updated)});
+                                }} className="w-full bg-[var(--bg-input)] border border-orange-500/30 text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
+                            </div>
+                            <div className="col-span-1 flex flex-col justify-center mt-2 border-r border-[var(--border-faint)] pr-4">
+                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1 text-purple-400">IVA (%)</label>
+                                <input type="number" step="0.5" value={editingSale.iva_percent !== undefined ? editingSale.iva_percent : (editingSale.apply_iva ? 16 : 0)} onChange={e=>{
+                                    const iva = parseFloat(e.target.value) || 0;
+                                    const updated = {...editingSale, iva_percent: iva};
+                                    setEditingSale({...updated, price_total: calcTotal(updated)});
+                                }} className="w-full bg-[var(--bg-input)] border border-purple-500/30 text-[var(--text-main)] rounded-lg p-2.5 focus:border-purple-500/80 outline-none transition" />
+                            </div>
+
+                            <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
+                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Categoría</label>
+                                <input type="text" value={editingSale.category || 'Hardware'} disabled className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-muted)] rounded-lg p-2.5 outline-none font-medium cursor-not-allowed opacity-70" />
+                            </div>
+
+                            <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
                                 <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Fecha</label>
-                                <input type="date" value={editingSale.sale_date} onChange={e=>setEditingSale({...editingSale, sale_date: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition [color-scheme:dark]" />
+                                <input type="date" value={editingSale.sale_date ? editingSale.sale_date.split('T')[0] : ''} onChange={e=>setEditingSale({...editingSale, sale_date: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition [color-scheme:dark]" />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Costo Total ($)</label>
-                                <input type="number" step="0.01" value={editingSale.price_total} onChange={e=>setEditingSale({...editingSale, price_total: parseFloat(e.target.value)})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none font-bold text-[var(--text-accent)] transition" />
+                            <div className="col-span-1">
+                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1 text-green-400">Total Facturado ($)</label>
+                                <input type="number" step="0.01" value={editingSale.price_total} readOnly className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 outline-none font-black text-green-400 text-lg cursor-not-allowed opacity-90 shadow-inner" title="Calculado de manera automática" />
                             </div>
-                            <div>
+
+                            <div className="col-span-2 border-t border-[var(--border-faint)] mt-4 pt-4"></div>
+
+                            <div className="col-span-1 border-r border-[var(--border-faint)] pr-4">
                                 <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Método de Pago</label>
                                 <select value={editingSale.payment_method} onChange={e=>setEditingSale({...editingSale, payment_method: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
                                     <option value="Card">Tarjeta (Deb/Cred)</option><option value="Transfer">Transferencia</option><option value="Cash">Efectivo</option><option value="Crypto">Criptomoneda</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Categoría</label>
-                                <select value={editingSale.category} onChange={e=>setEditingSale({...editingSale, category: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
-                                    <option value="Hardware">Hardware</option><option value="Software">Software</option><option value="Servicios">Servicios</option>
+                            <div className="col-span-1">
+                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Empleado Facturador</label>
+                                <select required value={editingSale.seller_name} onChange={e=>setEditingSale({...editingSale, seller_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition">
+                                    <option value="" disabled>Seleccione el responsable...</option>
+                                    {staffList.filter(s => s.status === 'Activo').map(s => (
+                                        <option key={s.id} value={s.name}>{s.name} ({s.department})</option>
+                                    ))}
                                 </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--text-sec)] uppercase mb-1">Empleado</label>
-                                <input type="text" value={editingSale.seller_name} onChange={e=>setEditingSale({...editingSale, seller_name: e.target.value})} className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-lg p-2.5 focus:border-[var(--border-hover-alt)] outline-none transition" />
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-[var(--border-base)]">

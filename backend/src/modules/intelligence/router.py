@@ -178,6 +178,7 @@ async def list_products(db: AsyncSession = Depends(get_db)):
         Product.access_level,
         Product.price,
         Product.stock,
+        Product.category,
         Product.agent_instruction
     )).order_by(Product.id)
     
