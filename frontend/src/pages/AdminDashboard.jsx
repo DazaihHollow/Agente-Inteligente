@@ -25,6 +25,31 @@ const AdminDashboard = () => {
     const [customQuery, setCustomQuery] = useState('');
     const [customData, setCustomData] = useState(null);
     const [customLoading, setCustomLoading] = useState(false);
+    
+    const [chartFilter, setChartFilter] = useState('Todos');
+    const [sellerFilter, setSellerFilter] = useState('');
+
+    // Currency and Exchange Rates State
+    const [revenueCurrency, setRevenueCurrency] = useState('USD');
+    const [bcvRates, setBcvRates] = useState({
+        USD: 55.74, 
+        EUR: 58.21
+    });
+
+    const getConvertedAmount = (amount) => {
+        if (!amount) return 0;
+        if (revenueCurrency === 'USD') return amount;
+        if (revenueCurrency === 'VES') return amount * bcvRates.USD;
+        if (revenueCurrency === 'EUR') return amount * (bcvRates.USD / bcvRates.EUR);
+        return amount;
+    };
+
+    const formatCurrency = (amount) => {
+        const val = getConvertedAmount(amount);
+        const prefix = revenueCurrency === 'USD' ? '$' : revenueCurrency === 'EUR' ? '€' : 'Bs. ';
+        const locale = revenueCurrency === 'USD' ? 'en-US' : revenueCurrency === 'EUR' ? 'es-ES' : 'es-VE';
+        return `${prefix}${val.toLocaleString(locale, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    };
 
     // Ingestion UI State
     const [isUploading, setIsUploading] = useState(false);
@@ -44,6 +69,25 @@ const AdminDashboard = () => {
     useEffect(() => {
         fetchAllData();
     }, [selectedMonth, selectedYear, selectedCustomer]);
+
+    useEffect(() => {
+        const fetchBcvRates = async () => {
+            try {
+                const [usdRes, eurRes] = await Promise.all([
+                    axios.get('https://ve.dolarapi.com/v1/dolares'),
+                    axios.get('https://ve.dolarapi.com/v1/euros')
+                ]);
+                
+                const usdOficial = usdRes.data.find(d => d.fuente === 'oficial')?.promedio || 55.74;
+                const eurOficial = eurRes.data.find(d => d.fuente === 'oficial')?.promedio || 58.21;
+                
+                setBcvRates({ USD: usdOficial, EUR: eurOficial });
+            } catch (error) {
+                console.error("Error fetching BCV rates from dolarapi.com:", error);
+            }
+        };
+        fetchBcvRates();
+    }, []);
 
     const fetchAllData = async () => {
         setLoading(true);
@@ -185,6 +229,15 @@ const AdminDashboard = () => {
         }
     };
 
+    const getChartColor = (index) => {
+        const colors = ['#8B5CF6', '#3B82F6', '#C084FC', '#F59E0B', '#10B981', '#F472B6'];
+        return colors[index % colors.length];
+    };
+
+    const filteredChartData = (salesStats?.breakdown || []).filter(d => 
+        chartFilter === 'Todos' ? true : d.category.toLowerCase() === chartFilter.toLowerCase()
+    );
+
     if (loading) return (
         <div className="flex items-center justify-center min-h-screen bg-[#070514] text-white">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
@@ -269,18 +322,33 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-purple-500/50 hover:shadow-purple-900/20 transition-all duration-300">
-                                <div className="text-indigo-300/70 text-sm mb-1 uppercase tracking-wider font-semibold">Ganancias Totales</div>
-                                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">${salesStats?.total_profit?.toLocaleString()}</div>
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-purple-500/50 hover:shadow-purple-900/20 transition-all duration-300 relative group">
+                                <div className="flex justify-between items-center mb-1">
+                                    <div className="text-indigo-300/70 text-sm uppercase tracking-wider font-semibold">Ganancias Totales</div>
+                                </div>
+                                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">
+                                    {formatCurrency(salesStats?.total_profit)}
+                                </div>
                             </div>
                             <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-blue-500/50 hover:shadow-blue-900/20 transition-all duration-300">
                                 <div className="text-indigo-300/70 text-sm mb-1 uppercase tracking-wider font-semibold">Productos Vendidos</div>
                                 <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">{salesStats?.total_sold}</div>
                             </div>
-                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-purple-500/50 hover:shadow-purple-900/20 transition-all duration-300">
-                                <div className="text-indigo-300/70 text-sm mb-1 uppercase tracking-wider font-semibold">Ticket Promedio</div>
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-purple-500/50 hover:shadow-purple-900/20 transition-all duration-300 relative group">
+                                <div className="flex justify-between items-center mb-1">
+                                    <div className="text-indigo-300/70 text-sm uppercase tracking-wider font-semibold">Tasa Oficial BCV</div>
+                                    <select 
+                                        value={revenueCurrency} 
+                                        onChange={e=>setRevenueCurrency(e.target.value)}
+                                        className="bg-[#0d0a20] border border-purple-800/50 rounded p-1 text-[10px] text-indigo-300 outline-none focus:border-purple-500 cursor-pointer"
+                                    >
+                                        <option value="USD">Dólares (USD)</option>
+                                        <option value="VES">Bolívares (VES)</option>
+                                        <option value="EUR">Euros (EUR)</option>
+                                    </select>
+                                </div>
                                 <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-200 drop-shadow-sm">
-                                    ${salesStats?.total_sold ? (salesStats.total_profit / salesStats.total_sold).toFixed(2) : 0}
+                                    Bs. {revenueCurrency === 'EUR' ? bcvRates.EUR.toFixed(2) : bcvRates.USD.toFixed(2)}
                                 </div>
                             </div>
                             <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 hover:border-blue-500/50 hover:shadow-blue-900/20 transition-all duration-300">
@@ -290,54 +358,95 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30">
-                                <h3 className="text-lg font-bold text-white mb-6 tracking-wide drop-shadow-sm">Hardware vs Software</h3>
-                                <div className="h-80">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={salesStats?.breakdown || []}
-                                                dataKey="total"
-                                                nameKey="category"
-                                                cx="50%"
-                                                cy="50%"
-                                                outerRadius={100}
-                                                label={{ fill: '#e2e8f0', fontSize: 12, fontWeight: 'bold' }}
-                                                stroke="none"
-                                            >
-                                                {salesStats?.breakdown.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#8B5CF6' : index === 1 ? '#3B82F6' : '#C084FC'} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip contentStyle={{ backgroundColor: '#070514', borderColor: '#4C1D95', borderRadius: '12px', color: '#fff' }} itemStyle={{ color: '#fff' }} />
-                                            <Legend wrapperStyle={{ color: '#c7d2fe' }} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 flex flex-col">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-lg font-bold text-white tracking-wide drop-shadow-sm">Gráfico de Ganancias</h3>
+                                    <select 
+                                        value={chartFilter} 
+                                        onChange={e=>setChartFilter(e.target.value)}
+                                        className="bg-[#0d0a20] border border-purple-800/50 rounded-lg p-1.5 text-xs text-indigo-300 outline-none focus:border-purple-500"
+                                    >
+                                        <option value="Todos">Todas las Categorías</option>
+                                        <option value="Hardware">Hardware</option>
+                                        <option value="Software">Software</option>
+                                        <option value="Servicios">Servicios</option>
+                                    </select>
+                                </div>
+                                <div className="h-80 flex-1 flex items-center">
+                                    <div className="w-1/2 h-full relative">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={filteredChartData}
+                                                    dataKey="total"
+                                                    nameKey="category"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={50}
+                                                    outerRadius={90}
+                                                    stroke="none"
+                                                    paddingAngle={5}
+                                                >
+                                                    {filteredChartData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={getChartColor(index)} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip contentStyle={{ backgroundColor: '#070514', borderColor: '#4C1D95', borderRadius: '12px', color: '#fff' }} itemStyle={{ color: '#fff' }} formatter={(val) => formatCurrency(val)} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div className="w-1/2 h-full flex flex-col justify-center space-y-6 pl-6 overflow-y-auto custom-scrollbar">
+                                        {filteredChartData.map((entry, index) => (
+                                            <div key={`legend-${index}`} className="flex flex-col border-b border-purple-900/20 pb-3 hover:bg-purple-900/10 p-2 rounded-lg transition-colors">
+                                                <div className="flex justify-between items-center w-full mb-1">
+                                                    <span className="font-bold text-white text-sm tracking-wide">{entry.category.toUpperCase()}</span>
+                                                    <div className="w-4 h-4 rounded shadow-sm shadow-[#120e2b]" style={{ backgroundColor: getChartColor(index) }}></div>
+                                                </div>
+                                                <span className="text-purple-300 text-sm font-black tracking-wider">({formatCurrency(entry.total)})</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 overflow-hidden">
-                                <h3 className="text-lg font-bold text-white mb-6 tracking-wide drop-shadow-sm">Desempeño por Vendedor</h3>
-                                <div className="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                                    {(salesStats?.seller_stats || []).map((seller) => (
+                            <div className="bg-[#120e2b] p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 overflow-hidden flex flex-col">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-lg font-bold text-white tracking-wide drop-shadow-sm">Desempeño por Vendedor</h3>
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-purple-400/50" size={14} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Filtrar vendedor..." 
+                                            value={sellerFilter}
+                                            onChange={e=>setSellerFilter(e.target.value)}
+                                            className="bg-[#0d0a20] border border-purple-800/50 rounded-lg pl-8 p-1.5 text-xs text-white focus:border-purple-500 outline-none w-40"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                    {(salesStats?.seller_stats || []).filter(s => s.name.toLowerCase().includes(sellerFilter.toLowerCase())).map((seller) => (
                                         <div key={seller.name} className="p-4 bg-[#0d0a20] rounded-xl border border-purple-900/30 hover:border-purple-500/50 transition-colors">
                                             <div className="flex justify-between items-center mb-3">
                                                 <span className="font-bold text-purple-100">{seller.name}</span>
-                                                <span className="text-purple-400 font-black">${seller.total.toLocaleString()}</span>
+                                                <span className="text-purple-400 font-black">{formatCurrency(seller.total)}</span>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div className="grid grid-cols-3 gap-2 text-xs">
                                                 <div className="flex justify-between p-2 bg-[#1a153a] rounded-lg border border-purple-800/20">
                                                     <span className="text-indigo-300">Software</span>
-                                                    <span className="font-bold text-blue-400">${seller.software.toLocaleString()}</span>
+                                                    <span className="font-bold text-blue-400">{formatCurrency(seller.software)}</span>
                                                 </div>
                                                 <div className="flex justify-between p-2 bg-[#1a153a] rounded-lg border border-purple-800/20">
                                                     <span className="text-indigo-300">Hardware</span>
-                                                    <span className="font-bold text-blue-400">${seller.hardware.toLocaleString()}</span>
+                                                    <span className="font-bold text-blue-400">{formatCurrency(seller.hardware)}</span>
+                                                </div>
+                                                <div className="flex justify-between p-2 bg-[#1a153a] rounded-lg border border-purple-800/20">
+                                                    <span className="text-indigo-300">Servicios</span>
+                                                    <span className="font-bold text-blue-400">{formatCurrency(seller.servicios || 0)}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
-                                    {(!salesStats?.seller_stats || salesStats.seller_stats.length === 0) && (
-                                        <div className="text-center py-10 text-purple-300/50 italic">No hay datos de vendedores</div>
+                                    {(salesStats?.seller_stats || []).filter(s => s.name.toLowerCase().includes(sellerFilter.toLowerCase())).length === 0 && (
+                                        <div className="text-center py-10 text-purple-300/50 italic">No se encontraron vendedores</div>
                                     )}
                                 </div>
                             </div>

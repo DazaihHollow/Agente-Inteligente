@@ -168,13 +168,15 @@ class ReportService:
         for row in seller_result:
             s_name = row.seller_name or "Sin Asignar"
             if s_name not in sellers_map:
-                sellers_map[s_name] = {"name": s_name, "software": 0, "hardware": 0, "total": 0}
+                sellers_map[s_name] = {"name": s_name, "software": 0, "hardware": 0, "servicios": 0, "total": 0}
             
             cat_lower = row.category.lower()
             if "software" in cat_lower:
                 sellers_map[s_name]["software"] += row.total
             elif "hardware" in cat_lower:
                 sellers_map[s_name]["hardware"] += row.total
+            elif "servicios" in cat_lower or "service" in cat_lower:
+                sellers_map[s_name]["servicios"] += row.total
             
             sellers_map[s_name]["total"] += row.total
 
