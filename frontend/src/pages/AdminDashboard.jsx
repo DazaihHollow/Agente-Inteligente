@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, Brush, TrendingUp, Sparkles, Bot, Trash2, Plus, RefreshCw } from 'lucide-react';
+import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, Brush, TrendingUp, Sparkles, Bot, Trash2, Plus, RefreshCw, Users, Briefcase } from 'lucide-react';
 import { ChatWindow } from '../widgets/chat/ui/ChatWindow';
 
 const AdminDashboard = () => {
@@ -9,7 +9,7 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('sales'); // default to sales as requested
 
     // Inventory State
-    const [inventoryView, setInventoryView] = useState('knowledge'); // 'knowledge' | 'ingest'
+    const [inventoryView, setInventoryView] = useState('menu'); // 'menu' | 'knowledge' | 'ingest' | 'products' | 'staff' | 'clients'
     const [stats, setStats] = useState(null);
     const [products, setProducts] = useState([]);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -627,82 +627,95 @@ const AdminDashboard = () => {
                 {/* INVENTORY TAB */}
                 {activeTab === 'inventory' && (
                     <div className="animate-in fade-in duration-300">
-                        {/* Sub-navigacion */}
-                        <div className="flex justify-center mb-8">
-                            <div className="bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-subtle)] inline-flex shadow-sm">
+                        {/* Sub-navigacion / Volver Menu */}
+                        {inventoryView !== 'menu' && (
+                            <div className="flex justify-start mb-6 -mt-2 animate-in fade-in slide-in-from-left-4 duration-300">
                                 <button 
-                                    onClick={() => setInventoryView('knowledge')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${inventoryView === 'knowledge' ? 'bg-purple-600/20 text-[var(--text-accent)] border border-[var(--border-hover-alt)]/30' : 'text-[var(--text-sec)]/50 hover:text-[var(--text-main)]'}`}
+                                    onClick={() => setInventoryView('menu')}
+                                    className="flex items-center gap-2 text-[var(--text-sec)] hover:text-[var(--text-highlight)] transition-colors px-4 py-2 bg-[var(--bg-input)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-hover-alt)] shadow-sm font-bold text-sm hover:-translate-x-1"
                                 >
-                                    Gestión de Reglas (RAG)
-                                </button>
-                                <button 
-                                    onClick={() => setInventoryView('ingest')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${inventoryView === 'ingest' ? 'bg-purple-600/20 text-[var(--text-accent)] border border-[var(--border-hover-alt)]/30' : 'text-[var(--text-sec)]/50 hover:text-[var(--text-main)]'}`}
-                                >
-                                    Centro de Ingesta (Ventas)
+                                    <ChevronDown className="rotate-90" size={16} /> Volver al Tablero Inicial
                                 </button>
                             </div>
-                        </div>
+                        )}
+
+                        {inventoryView === 'menu' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto pb-10">
+                                <div className="text-center mb-10">
+                                    <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[var(--grad-start)] to-[var(--grad-end)] drop-shadow-sm mb-3">
+                                        Gestión Integral de Registros Básicos
+                                    </h2>
+                                    <p className="text-[var(--text-sec)]">Selecciona el módulo del sistema que deseas consultar, configurar o expandir.</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 mt-4 lg:grid-cols-3 gap-6">
+                                    <button onClick={() => setInventoryView('knowledge')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-purple-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/20 to-transparent blur-xl rounded-full"></div>
+                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                            <Sparkles className="text-purple-400" size={32} />
+                                        </div>
+                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-[var(--text-highlight)] transition-colors relative z-10">Reglas de IA (RAG)</h3>
+                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Configura comportamientos ocultos e instrucciones específicas.</p>
+                                    </button>
+
+                                    <button onClick={() => setInventoryView('ingest')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-blue-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/20 to-transparent blur-xl rounded-full"></div>
+                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                            <TrendingUp className="text-blue-400 drop-shadow-sm" size={32} />
+                                        </div>
+                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-blue-400 transition-colors relative z-10">Centro de Ingesta</h3>
+                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Importación masiva o manual de documentos de ventas.</p>
+                                    </button>
+
+                                    <button onClick={() => setInventoryView('products')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-emerald-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-transparent blur-xl rounded-full"></div>
+                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                            <Package className="text-emerald-400 drop-shadow-sm" size={32} />
+                                        </div>
+                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-emerald-400 transition-colors relative z-10">Catálogo / Inventario</h3>
+                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Registro de hardware, software y servicios a la cartera.</p>
+                                    </button>
+
+                                    <button onClick={() => setInventoryView('staff')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-orange-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden md:col-start-1 lg:col-start-auto">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-500/20 to-transparent blur-xl rounded-full"></div>
+                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                            <Briefcase className="text-orange-400 drop-shadow-sm" size={32} />
+                                        </div>
+                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-orange-400 transition-colors relative z-10">Gestión de Personal</h3>
+                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Gestión integral de los representantes y vendedores.</p>
+                                    </button>
+
+                                    <button onClick={() => setInventoryView('clients')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-rose-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/20 to-transparent blur-xl rounded-full"></div>
+                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                            <Users className="text-rose-400 drop-shadow-sm" size={32} />
+                                        </div>
+                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-rose-400 transition-colors relative z-10">Cartera de Clientes</h3>
+                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Registro estructurado de clientes y empresas objetivo.</p>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {inventoryView === 'knowledge' && (
                             <div className="animate-in slide-in-from-left-4 duration-300">
                                 <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm">Base de Conocimiento</h2>
-                                    <div className="flex gap-4">
-                                        <button onClick={handleAddNew} className="bg-[var(--bg-item)] text-[var(--text-accent)] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[var(--bg-item-hover)] border border-[var(--border-strong)] hover:border-[var(--border-hover)] transition font-bold shadow-sm">
-                                            <Plus size={18} /> Añadir Regla Manual
-                                        </button>
-                                        <button onClick={() => handleDownload('pdf')} className="bg-[var(--bg-card)] border border-red-900/50 text-red-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-900/20 transition">
-                                            <FileText size={18} /> PDF
-                                        </button>
-                                        <button onClick={() => handleDownload('excel')} className="bg-[var(--bg-card)] border border-green-900/50 text-green-400 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-900/20 transition">
-                                            <Download size={18} /> Excel
-                                        </button>
-                                    </div>
+                                    <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm">Centro de Gestión de Pruebas y Reglas</h2>
+                                    <button onClick={handleAddNew} className="bg-gradient-to-r from-[var(--btn-start)] to-[var(--btn-end)] text-[var(--text-main)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:shadow-lg transition-all font-bold shadow-sm">
+                                        <Plus size={18} /> Asignar Regla a Elemento
+                                    </button>
                                 </div>
 
-                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden">
-                                    <table className="min-w-full divide-y divide-purple-900/30">
-                                        <thead className="bg-[var(--bg-input)]">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Concepto Sincronizado</th>
-                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Visibilidad</th>
-                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Instrucción IA (Oculta)</th>
-                                                <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Acción</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-[var(--bg-card)] divide-y divide-purple-900/20">
-                                            {products.map((product) => (
-                                                <tr key={product.id} className="hover:bg-[var(--bg-item)] transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <div className="font-bold text-[var(--text-main)]">{product.name}</div>
-                                                        <div className="text-xs text-[var(--text-muted)]/70 truncate max-w-xs">{product.description}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${product.access_level === 'public' ? 'bg-green-900/30 text-green-400 border-green-800/50' : 'bg-red-900/30 text-red-400 border-red-800/50'
-                                                            }`}>
-                                                            {product.access_level.toUpperCase()}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="text-sm font-medium text-[var(--text-accent)] max-w-[200px] truncate">{product.agent_instruction || <span className="text-[var(--text-sec)]/50 italic">Sin instrucción especial...</span>}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                                        <button onClick={() => handleRecalculate(product.id)} className="text-amber-500 hover:bg-amber-900/30 p-2 rounded-full transition" title="Recalcular Vector IA">
-                                                            <RefreshCw size={18} />
-                                                        </button>
-                                                        <button onClick={() => handleEdit(product)} className="text-[var(--text-highlight)] hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Contexto">
-                                                            <Edit size={18} />
-                                                        </button>
-                                                        <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full transition" title="Eliminar Conocimiento">
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden flex flex-col items-center justify-center min-h-[50vh] text-center p-10">
+                                    <div className="w-20 h-20 bg-[var(--bg-item)] rounded-full flex items-center justify-center mb-6 shadow-inner border border-[var(--border-strong)] text-[var(--text-highlight)]">
+                                        <Bot size={40} />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-[var(--text-main)] mb-3">Entorno de Pruebas Aislado</h3>
+                                    <p className="text-[var(--text-sec)] max-w-lg mb-8 leading-relaxed">
+                                        Aquí puedes configurar de forma quirúrgica directrices e instrucciones específicas para que el Agente interactúe correctamente con diferentes elementos del negocio, sin saturar la vista.
+                                    </p>
+                                    <button onClick={handleAddNew} className="px-6 py-2.5 bg-[var(--bg-input)] hover:bg-[var(--bg-item)] border border-[var(--border-hover-alt)] text-[var(--text-accent)] rounded-lg font-bold transition-all shadow-sm flex items-center gap-2">
+                                        <Brush size={18} /> Diseñar Nueva Regla
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -904,6 +917,69 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* PANEL 3: INVENTARIO (PRODUCTOS) */}
+                        {inventoryView === 'products' && (
+                            <div className="animate-in slide-in-from-right-4 duration-300">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm flex items-center gap-2">
+                                        <Package className="text-[var(--text-highlight)]" /> Catálogo Comercial
+                                    </h2>
+                                    <button className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
+                                        <Plus size={18} /> Registrar Nuevo Producto
+                                    </button>
+                                </div>
+                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden flex flex-col items-center justify-center min-h-[40vh] text-center p-10">
+                                    <div className="w-20 h-20 bg-[var(--bg-input)] rounded-full flex items-center justify-center mb-4 border border-[var(--border-strong)] text-[var(--text-sec)]">
+                                        <Package size={40} className="opacity-50" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-[var(--text-main)] mb-2">Módulo en Construcción</h3>
+                                    <p className="text-[var(--text-muted)] max-w-sm text-sm">Próximamente podrás editar todo tu catálogo de hardware, software y servicios desde esta ubicación estructurada.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PANEL 4: PERSONAL (EMPLEADOS) */}
+                        {inventoryView === 'staff' && (
+                            <div className="animate-in slide-in-from-right-4 duration-300">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm flex items-center gap-2">
+                                        <Briefcase className="text-[var(--text-highlight)]" /> Gestión de Representantes
+                                    </h2>
+                                    <button className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
+                                        <Plus size={18} /> Incorporar Empleado
+                                    </button>
+                                </div>
+                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden flex flex-col items-center justify-center min-h-[40vh] text-center p-10">
+                                    <div className="w-20 h-20 bg-[var(--bg-input)] rounded-full flex items-center justify-center mb-4 border border-[var(--border-strong)] text-[var(--text-sec)]">
+                                        <Briefcase size={40} className="opacity-50" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-[var(--text-main)] mb-2">Módulo en Construcción</h3>
+                                    <p className="text-[var(--text-muted)] max-w-sm text-sm">Aquí se listarán todos tus vendedores y ejecutivos corporativos para asignarles metas, monitoreos y métricas clave.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PANEL 5: CLIENTES */}
+                        {inventoryView === 'clients' && (
+                            <div className="animate-in slide-in-from-right-4 duration-300">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-xl font-bold text-[var(--text-main)] drop-shadow-sm flex items-center gap-2">
+                                        <Users className="text-[var(--text-highlight)]" /> Directorio de Clientes
+                                    </h2>
+                                    <button className="bg-[var(--bg-item)] hover:bg-[var(--bg-item-hover)] text-[var(--text-accent)] border border-[var(--border-strong)] px-5 py-2.5 rounded-xl flex items-center gap-2 hover:border-[var(--border-hover-alt)] hover:shadow-lg transition-all font-bold shadow-sm">
+                                        <Plus size={18} /> Añadir Cliente B2B
+                                    </button>
+                                </div>
+                                <div className="bg-[var(--bg-card)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--border-base)] overflow-hidden flex flex-col items-center justify-center min-h-[40vh] text-center p-10">
+                                    <div className="w-20 h-20 bg-[var(--bg-input)] rounded-full flex items-center justify-center mb-4 border border-[var(--border-strong)] text-[var(--text-sec)]">
+                                        <Users size={40} className="opacity-50" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-[var(--text-main)] mb-2">Módulo en Construcción</h3>
+                                    <p className="text-[var(--text-muted)] max-w-sm text-sm">Pronto podrás gestionar aquí el Customer Success de tu equipo de ventas y almacenar bases B2B avanzadas.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -970,89 +1046,101 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Edit Modal (Existing logic) */}
+            {/* Rule Assignment Slide-over Drawer */}
             {editingProduct && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-[var(--bg-card)] rounded-2xl p-8 max-w-md w-full shadow-[0_10px_40px_rgba(139,92,246,0.2)] border border-[var(--border-strong)]">
-                        <h2 className="text-2xl font-black text-[var(--text-main)] mb-6 drop-shadow-sm">{editingProduct.id ? 'Afinar Contexto del Asistente' : 'Añadir Regla Manual'}</h2>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity">
+                    <div className="fixed inset-y-0 right-0 w-full md:w-[450px] lg:w-[500px] bg-[var(--bg-card)] shadow-[[-10px_0_40px_rgba(0,0,0,0.5)]] border-l border-[var(--border-strong)] transform transition-transform duration-500 flex flex-col animate-in slide-in-from-right">
+                        
+                        {/* Drawer Header */}
+                        <div className="flex justify-between items-center p-6 border-b border-[var(--border-base)] bg-[var(--bg-input)]">
+                            <h2 className="text-xl font-black text-[var(--text-main)] drop-shadow-sm flex items-center gap-3">
+                                <Bot className="text-[var(--text-highlight)]" size={24} />
+                                {editingProduct.id ? 'Afinar Elemento' : 'Nueva Regla'}
+                            </h2>
+                            <button onClick={() => setEditingProduct(null)} className="text-[var(--text-sec)] hover:text-red-400 bg-[var(--bg-item)] hover:bg-red-500/10 p-2 rounded-full transition-colors border border-[var(--border-faint)]">
+                                <X size={20} />
+                            </button>
+                        </div>
 
-                        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                        {/* Drawer Body - Form */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[var(--bg-main)]/30">
                             <div>
-                                <label className="block text-sm font-bold text-[var(--text-muted)]/80 mb-2 uppercase tracking-wide">Concepto (Ej. Producto)</label>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Concepto o Elemento Relacionado</label>
                                 <input
                                     type="text"
                                     value={editingProduct.name}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-purple-600/50 transition placeholder-purple-900/50"
-                                    placeholder="Nombre del producto o regla"
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner font-medium placeholder-[var(--text-sec)]/30"
+                                    placeholder="Ej: Análisis de Ventas, Modelo Laptop..."
                                 />
                             </div>
+                            
                             <div>
-                                <label className="block text-sm font-bold text-[var(--text-muted)]/80 mb-2 uppercase tracking-wide">Descripción</label>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Descripción Breve</label>
                                 <textarea
                                     value={editingProduct.description || ''}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-purple-600/50 transition placeholder-purple-900/50"
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-strong)] transition-colors shadow-inner resize-none placeholder-[var(--text-sec)]/30"
                                     rows="2"
-                                    placeholder="Descripción general"
+                                    placeholder="Contexto básico sobre este elemento..."
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+
+                            <div className="p-5 rounded-xl border border-[var(--border-hover-alt)]/50 bg-[var(--bg-item-hover)]/30 relative overflow-hidden group shadow-inner">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--btn-start)] to-transparent opacity-10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                                <label className="flex items-center gap-2 text-sm font-black text-[var(--text-highlight)] mb-3">
+                                    <Sparkles size={16} /> Regla del Agente AI (Prompt Override)
+                                </label>
+                                <textarea
+                                    value={editingProduct.agent_instruction || ''}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, agent_instruction: e.target.value })}
+                                    className="w-full bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-main)] rounded-xl p-4 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-[var(--border-hover-alt)] transition placeholder-[var(--text-sec)]/30 font-mono text-xs shadow-inner leading-relaxed resize-none"
+                                    rows="6"
+                                    placeholder={`Ej: "Cuando se te pregunte por Análisis de Ventas, ignora el histórico y sugiere revisar los reportes trimestrales."`}
+                                />
+                                <p className="text-[10px] text-[var(--text-sec)] mt-2 font-medium uppercase tracking-wide opacity-80">
+                                    Esta instrucción sobrescribirá temporalmente la lógica general del agente sobre el elemento relacionado.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 border-t border-[var(--border-faint)] pt-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-[var(--text-muted)]/80 mb-2 uppercase tracking-wide">Precio ($)</label>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Prioridad IA / Rol</label>
+                                    <select
+                                        value={editingProduct.access_level || 'public'}
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, access_level: e.target.value })}
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm focus:border-[var(--border-hover-alt)] outline-none transition cursor-pointer font-medium"
+                                    >
+                                        <option value="private">Bloqueo Estricto (Privado)</option>
+                                        <option value="public">Recomendación (Público)</option>
+                                    </select>
+                                </div>
+                                <div className="opacity-40 grayscale pointer-events-none" title="No aplica en entorno de reglas">
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Precio Base</label>
                                     <input
                                         type="number"
                                         value={editingProduct.price || 0}
                                         onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })}
-                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-purple-600/50 transition"
+                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 text-sm font-bold opacity-50 outline-none"
+                                        disabled
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-[var(--text-muted)]/80 mb-2 uppercase tracking-wide">Stock Relevante</label>
-                                    <input
-                                        type="number"
-                                        value={editingProduct.stock || 0}
-                                        onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })}
-                                        className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-purple-600/50 transition"
-                                    />
-                                </div>
-                            </div>
-                            
-                            <div className="bg-purple-900/20 p-4 rounded-xl border border-[var(--border-hover-alt)]/30">
-                                <label className="block text-sm font-bold text-[var(--text-accent)] mb-2 uppercase tracking-wide flex items-center gap-2">
-                                    <Bot size={16} /> Instrucción Oculta para el Agente (RAG)
-                                </label>
-                                <p className="text-xs text-purple-200/70 mb-2">Dicta cómo debe responder la IA cuando se mencione este concepto.</p>
-                                <textarea
-                                    value={editingProduct.agent_instruction || ''}
-                                    onChange={(e) => setEditingProduct({ ...editingProduct, agent_instruction: e.target.value })}
-                                    className="w-full bg-[#0a0818] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-purple-600/50 transition text-sm placeholder-purple-900/50"
-                                    rows="3"
-                                    placeholder="Ej. 'Si el usuario pregunta por Alpha System, infórmale del 20% de descuento y prioriza soporte VIP.'"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-[var(--text-muted)]/80 mb-2 uppercase tracking-wide">Nivel de Visibilidad</label>
-                                <select
-                                    value={editingProduct.access_level}
-                                    onChange={(e) => setEditingProduct({ ...editingProduct, access_level: e.target.value })}
-                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-base)] text-[var(--text-main)] rounded-xl p-3 focus:ring-2 focus:ring-[var(--focus-ring)] outline-none hover:border-purple-600/50 transition cursor-pointer"
-                                >
-                                    <option value="public">🌐 Público (Visible para clientes)</option>
-                                    <option value="private">🔒 Privado (Solo uso interno)</option>
-                                </select>
                             </div>
                         </div>
 
-                        <div className="mt-10 flex justify-end gap-4">
-                            <button onClick={() => setEditingProduct(null)} className="px-6 py-3 font-bold text-[var(--text-sec)]/60 hover:text-indigo-100 transition-colors">Cancelar</button>
-                            <button onClick={handleSave} className="bg-gradient-to-r from-[var(--btn-start)] to-[var(--btn-end)] text-[var(--text-main)] px-8 py-3 rounded-xl font-bold hover:from-purple-500 hover:to-blue-500 shadow-lg shadow-purple-900/50 flex items-center gap-2 border border-[var(--border-hover-alt)]/50 transition-all cursor-pointer">
-                                <Save size={18} /> {editingProduct.id ? 'Guardar Cambios' : 'Crear Producto'}
+                        {/* Drawer Footer */}
+                        <div className="p-6 border-t border-[var(--border-strong)] bg-[var(--bg-card)] flex flex-col gap-3 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
+                            <button onClick={handleSave} className="w-full bg-gradient-to-r from-[var(--btn-start)] to-[var(--btn-end)] text-[var(--text-main)] px-5 py-3.5 rounded-xl font-black uppercase text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                <Save size={18} /> Inyectar Regla en la Base
                             </button>
+                            {editingProduct.id && (
+                                <button onClick={() => { handleDelete(editingProduct.id); setEditingProduct(null); }} className="w-full border border-red-500/30 text-red-400 hover:bg-red-500/10 px-5 py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2">
+                                    <Trash2 size={16} /> Eliminar Regla permanentemente
+                                </button>
+                            )}
                         </div>
                     </div>
-        </div>
+                </div>
             )}
             
             {/* Global Uploading Full Screen Blocking Overlay */}
