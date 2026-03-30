@@ -31,8 +31,13 @@ const AdminDashboard = () => {
     const [manualSale, setManualSale] = useState({
         customer_name: '', product_name: '', quantity: 1, 
         sale_date: new Date().toISOString().split('T')[0], price: 0, 
-        price_total: 0, payment_method: 'Card', seller_name: ''
+        price_total: 0, payment_method: 'Card', seller_name: '', category: 'Hardware'
     });
+    
+    // Histórico
+    const [registeredSales, setRegisteredSales] = useState([]);
+    const [salesSearch, setSalesSearch] = useState('');
+    const [editingSale, setEditingSale] = useState(null);
 
     const [loading, setLoading] = useState(true);
 
@@ -43,20 +48,44 @@ const AdminDashboard = () => {
     const fetchAllData = async () => {
         setLoading(true);
         try {
-            const [statsRes, productsRes, salesRes, customersRes] = await Promise.all([
-                axios.get('http://localhost:8000/reports/stats'),
-                axios.get('http://localhost:8000/intelligence/products'),
-                axios.get(`http://localhost:8000/reports/sales?month=${selectedMonth}&year=${selectedYear}&customer_name=${selectedCustomer}`),
-                axios.get('http://localhost:8000/reports/customers')
+            const timestamp = new Date().getTime();
+            const [statsRes, productsRes, salesRes, customersRes, registeredRes] = await Promise.all([
+                axios.get(`http://localhost:8000/reports/stats?_t=${timestamp}`),
+                axios.get(`http://localhost:8000/intelligence/products?_t=${timestamp}`),
+                axios.get(`http://localhost:8000/reports/sales?month=${selectedMonth}&year=${selectedYear}&customer_name=${selectedCustomer}&_t=${timestamp}`),
+                axios.get(`http://localhost:8000/reports/customers?_t=${timestamp}`),
+                axios.get(`http://localhost:8000/ingestion/sales?_t=${timestamp}`)
             ]);
             setStats(statsRes.data);
             setProducts(productsRes.data);
             setSalesStats(salesRes.data);
             setCustomers(customersRes.data);
+            setRegisteredSales(registeredRes.data || []);
         } catch (error) {
             console.error("Error fetching admin data:", error);
         }
         setLoading(false);
+    };
+
+    const handleSaveSale = async () => {
+        try {
+            await axios.put(`http://localhost:8000/ingestion/sales/${editingSale.id}`, editingSale);
+            setEditingSale(null);
+            fetchAllData();
+            alert("Venta histórica actualizada.");
+        } catch (err) {
+            alert("Error al editar venta: " + err.message);
+        }
+    };
+
+    const handleDeleteSale = async (id) => {
+        if (!window.confirm('¿Seguro que deseas eliminar esta venta permanentemente?')) return;
+        try {
+            await axios.delete(`http://localhost:8000/ingestion/sales/${id}`);
+            fetchAllData();
+        } catch (err) {
+            alert("Error eliminando venta: " + err.message);
+        }
     };
 
     const handleCustomAnalyze = async () => {
@@ -463,7 +492,7 @@ const AdminDashboard = () => {
                                             setManualSale({
                                                 customer_name: '', product_name: '', quantity: 1, 
                                                 sale_date: new Date().toISOString().split('T')[0], price: 0, 
-                                                price_total: 0, payment_method: 'Card', seller_name: ''
+                                                price_total: 0, payment_method: 'Card', seller_name: '', category: 'Hardware'
                                             });
                                         } catch(err) {
                                             alert("Error registrando: " + err.message);
@@ -482,7 +511,10 @@ const AdminDashboard = () => {
 
                                         <div className="col-span-1">
                                             <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Unidades</label>
-                                            <input required type="number" min="1" value={manualSale.quantity} onChange={e=>setManualSale({...manualSale, quantity: parseInt(e.target.value)})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                                            <input required type="number" min="1" value={manualSale.quantity} onChange={e=>{
+                                                const q = parseInt(e.target.value) || 1;
+                                                setManualSale({...manualSale, quantity: q, price_total: manualSale.price * q});
+                                            }} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
                                         </div>
                                         <div className="col-span-1">
                                             <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Fecha de Venta</label>
@@ -510,7 +542,15 @@ const AdminDashboard = () => {
                                                 <option value="Crypto">Criptomoneda</option>
                                             </select>
                                         </div>
-                                        <div className="col-span-1">
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Categoría</label>
+                                            <select value={manualSale.category} onChange={e=>setManualSale({...manualSale, category: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition">
+                                                <option value="Hardware">Hardware</option>
+                                                <option value="Software">Software</option>
+                                                <option value="Servicios">Servicios</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
                                             <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Empleado</label>
                                             <input required type="text" value={manualSale.seller_name} onChange={e=>setManualSale({...manualSale, seller_name: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
                                         </div>
@@ -522,6 +562,66 @@ const AdminDashboard = () => {
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                                
+                                {/* HISTORICO COLAPAN-2 */}
+                                <div className="col-span-1 lg:col-span-2 mt-4">
+                                    <details className="bg-[#120e2b] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-purple-800/30 group">
+                                        <summary className="cursor-pointer p-6 list-none flex items-center justify-between">
+                                            <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                                                <Calendar className="text-purple-400" /> Histórico de Datos Registrados
+                                            </h3>
+                                            <div className="flex items-center gap-4">
+                                                <div className="relative group-open:opacity-100 opacity-0 transition-opacity" onClick={e=>e.preventDefault()}>
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400/50" size={16} />
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Buscar cliente/producto..." 
+                                                        className="bg-[#0d0a20] border border-purple-800/50 rounded-lg pl-9 p-2 text-sm text-white focus:border-purple-500 outline-none w-64"
+                                                        value={salesSearch}
+                                                        onChange={(e)=>setSalesSearch(e.target.value)}
+                                                    />
+                                                </div>
+                                                <ChevronDown className="text-indigo-300 group-open:rotate-180 transition-transform" />
+                                            </div>
+                                        </summary>
+                                        
+                                        <div className="p-6 pt-0 border-t border-purple-800/20">
+                                            <div className="overflow-x-auto max-h-[40vh] custom-scrollbar">
+                                                <table className="min-w-full divide-y divide-purple-900/30 table-fixed">
+                                                    <thead className="bg-[#0d0a20] sticky top-0">
+                                                        <tr>
+                                                            <th className="px-4 py-3 text-left text-xs font-bold text-purple-300 uppercase">Fecha</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-bold text-purple-300 uppercase">Cliente</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-bold text-purple-300 uppercase">Producto</th>
+                                                            <th className="px-4 py-3 text-right text-xs font-bold text-purple-300 uppercase">Total</th>
+                                                            <th className="px-4 py-3 text-right text-xs font-bold text-purple-300 uppercase">Acción</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-purple-900/20">
+                                                        {registeredSales
+                                                            .filter(s => 
+                                                                (s.customer_name||'').toLowerCase().includes(salesSearch.toLowerCase()) || 
+                                                                (s.product_name||'').toLowerCase().includes(salesSearch.toLowerCase())
+                                                            )
+                                                            .map(s => (
+                                                            <tr key={s.id} className="hover:bg-[#1a153a] transition-colors">
+                                                                <td className="px-4 py-3 text-sm text-indigo-200">{s.sale_date}</td>
+                                                                <td className="px-4 py-3 text-sm font-bold text-white truncate">{s.customer_name}</td>
+                                                                <td className="px-4 py-3 text-sm text-indigo-200 truncate">{s.product_name} <span className="text-xs text-purple-500 ml-1">x{s.quantity}</span></td>
+                                                                <td className="px-4 py-3 text-sm text-green-400 font-bold text-right">${s.price_total}</td>
+                                                                <td className="px-4 py-3 text-right flex justify-end gap-2">
+                                                                    <button onClick={() => setEditingSale(s)} className="text-purple-400 hover:bg-purple-900/30 p-2 rounded-full"><Edit size={16} /></button>
+                                                                    <button onClick={() => handleDeleteSale(s.id)} className="text-red-400 hover:bg-red-900/30 p-2 rounded-full"><Trash2 size={16} /></button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        {registeredSales.length===0 && <tr><td colSpan="5" className="px-4 py-8 text-center text-indigo-300/50">No hay ventas registradas</td></tr>}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </div>
                             </div>
                         )}
@@ -535,6 +635,61 @@ const AdminDashboard = () => {
                     </div>
                 )}
             </main>
+
+            {/* Sale Edit Modal */}
+            {editingSale && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-[#120e2b] rounded-2xl p-8 max-w-2xl w-full shadow-[0_10px_40px_rgba(139,92,246,0.2)] border border-purple-800/50">
+                        <h2 className="text-2xl font-black text-white mb-6 drop-shadow-sm flex items-center gap-2"><Edit size={24} className="text-purple-400" /> Editar Registro Histórico</h2>
+                        
+                        <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="col-span-2 md:col-span-1">
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Cliente</label>
+                                <input type="text" value={editingSale.customer_name} onChange={e=>setEditingSale({...editingSale, customer_name: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                            </div>
+                            <div className="col-span-2 md:col-span-1">
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Producto</label>
+                                <input type="text" value={editingSale.product_name} onChange={e=>setEditingSale({...editingSale, product_name: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Cantidad</label>
+                                <input type="number" min="1" value={editingSale.quantity} onChange={e=>{
+                                    const q = parseInt(e.target.value) || 1;
+                                    setEditingSale({...editingSale, quantity: q, price_total: editingSale.price * q});
+                                }} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Fecha</label>
+                                <input type="date" value={editingSale.sale_date} onChange={e=>setEditingSale({...editingSale, sale_date: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition [color-scheme:dark]" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Costo Total ($)</label>
+                                <input type="number" step="0.01" value={editingSale.price_total} onChange={e=>setEditingSale({...editingSale, price_total: parseFloat(e.target.value)})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none font-bold text-purple-300 transition" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Método de Pago</label>
+                                <select value={editingSale.payment_method} onChange={e=>setEditingSale({...editingSale, payment_method: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition">
+                                    <option value="Card">Tarjeta (Deb/Cred)</option><option value="Transfer">Transferencia</option><option value="Cash">Efectivo</option><option value="Crypto">Criptomoneda</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Categoría</label>
+                                <select value={editingSale.category} onChange={e=>setEditingSale({...editingSale, category: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition">
+                                    <option value="Hardware">Hardware</option><option value="Software">Software</option><option value="Servicios">Servicios</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-indigo-300 uppercase mb-1">Empleado</label>
+                                <input type="text" value={editingSale.seller_name} onChange={e=>setEditingSale({...editingSale, seller_name: e.target.value})} className="w-full bg-[#0d0a20] border border-purple-800/30 text-white rounded-lg p-2.5 focus:border-purple-500 outline-none transition" />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-purple-800/30">
+                            <button onClick={() => setEditingSale(null)} className="px-5 py-2 rounded-xl text-indigo-300 hover:text-white hover:bg-purple-900/30 transition">Cancelar</button>
+                            <button onClick={handleSaveSale} className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-2 rounded-xl font-bold text-white hover:from-purple-500 hover:to-blue-500 transition shadow-lg shadow-purple-900/40">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Edit Modal (Existing logic) */}
             {editingProduct && (

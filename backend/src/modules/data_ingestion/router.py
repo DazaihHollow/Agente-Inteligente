@@ -37,6 +37,7 @@ class ManualSaleRequest(BaseModel):
     price_total: float
     payment_method: str
     seller_name: str
+    category: str = "Hardware"
 
 @router.post("/")
 async def ingest_data(request: IngestionRequest, db: AsyncSession = Depends(get_db)):
@@ -58,6 +59,82 @@ async def ingest_data(request: IngestionRequest, db: AsyncSession = Depends(get_
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from src.modules.intelligence.models import Sale, Product
+from datetime import datetime
+
+class EditSaleRequest(BaseModel):
+    customer_name: str
+    product_name: str
+    quantity: int
+    sale_date: str
+    price: float
+    price_total: float
+    payment_method: str
+    seller_name: str
+    category: str
+
+@router.get("/sales")
+async def list_sales(db: AsyncSession = Depends(get_db)):
+    """ Listar todas las ventas para gestión manual """
+    result = await db.execute(select(Sale).options(selectinload(Sale.product)).order_by(Sale.sale_date.desc()))
+    sales = result.scalars().all()
+    
+    response = []
+    for s in sales:
+        total = s.price_total or 0
+        qty = s.quantity or 1
+        response.append({
+            "id": s.id,
+            "product_name": s.product.name if s.product else "Desconocido",
+            "quantity": qty,
+            "sale_date": s.sale_date.strftime("%Y-%m-%d") if s.sale_date else "",
+            "price": round(total / qty, 2),
+            "price_total": total,
+            "customer_name": s.customer_name or "Desconocido",
+            "seller_name": s.seller_name or "Desconocido",
+            "category": s.category or "General",
+            "payment_method": s.payment_method or "N/A"
+        })
+    return response
+
+@router.put("/sales/{sale_id}")
+async def update_sale(sale_id: int, request: EditSaleRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Sale).options(selectinload(Sale.product)).where(Sale.id == sale_id))
+    sale = result.scalar_one_or_none()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Venta no encontrada")
+        
+    sale.customer_name = request.customer_name
+    sale.quantity = request.quantity
+    sale.price_total = request.price_total
+    sale.seller_name = request.seller_name
+    sale.category = request.category
+    sale.payment_method = request.payment_method
+    
+    try:
+        sale.sale_date = datetime.strptime(request.sale_date, "%Y-%m-%d")
+    except:
+        pass
+        
+    if sale.product:
+        sale.product.name = request.product_name
+        
+    await db.commit()
+    return {"status": "success", "message": "Venta actualizada"}
+
+@router.delete("/sales/{sale_id}")
+async def delete_sale(sale_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Sale).where(Sale.id == sale_id))
+    sale = result.scalar_one_or_none()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Venta no encontrada")
+        
+    await db.delete(sale)
+    await db.commit()
+    return {"status": "success", "message": "Venta eliminada"}
+
 @router.post("/manual-sale")
 async def manual_sale(sale: ManualSaleRequest, db: AsyncSession = Depends(get_db)):
     """ Ingreso de una venta manual individual """
@@ -69,8 +146,8 @@ async def manual_sale(sale: ManualSaleRequest, db: AsyncSession = Depends(get_db
         db.add(new_data)
         await db.commit()
         
-        # Procesar inmediatamente
-        processed = await processor.process_batch(db, limit=1)
+        # Procesar lote (limite alto para destrancar cola si hay retrasos)
+        processed = await processor.process_batch(db, limit=50)
         return {"status": "success", "message": "Venta procesada exitosamente."}
     except Exception as e:
         await db.rollback()

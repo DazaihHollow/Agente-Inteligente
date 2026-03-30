@@ -71,9 +71,12 @@ class ContentProcessor:
                                 sale_date = datetime.strptime(sale_date_val, "%Y-%m-%d %H:%M:%S")
                             except:
                                 try:
-                                    sale_date = datetime.strptime(sale_date_val, "%d/%m/%Y")
+                                    sale_date = datetime.strptime(sale_date_val, "%Y-%m-%d")
                                 except:
-                                    sale_date = datetime.utcnow()
+                                    try:
+                                        sale_date = datetime.strptime(sale_date_val, "%d/%m/%Y")
+                                    except:
+                                        sale_date = datetime.utcnow()
                         elif isinstance(sale_date_val, (int, float)):
                             # Pandas might pass timestamp in ms
                             sale_date = datetime.fromtimestamp(sale_date_val / 1000)
@@ -88,6 +91,8 @@ class ContentProcessor:
                     cname = payload_data.get('customer_name', payload_data.get('Nombre', 'Cliente Genérico'))
                     sname = payload_data.get('seller_name', payload_data.get('Empleado', 'Vendedor Sin Asignar'))
                     pmethod = payload_data.get('payment_method', payload_data.get('Metodo de Pago'))
+                    # Extraer categoria si exite (Software vs Hardware)
+                    cat = payload_data.get('category', payload_data.get('Categoria', payload_data.get('Categoría', 'General')))
                     
                     # Convertir a numerico por consistencia
                     try: qty = int(qty)
@@ -101,7 +106,7 @@ class ContentProcessor:
                         quantity=qty,
                         price_total=ptotal,
                         sale_date=sale_date,
-                        category=payload_data.get('category', 'General'),
+                        category=cat,
                         region=payload_data.get('region', 'Global'),
                         customer_type=payload_data.get('customer_type', 'Individual'),
                         customer_name=cname,
