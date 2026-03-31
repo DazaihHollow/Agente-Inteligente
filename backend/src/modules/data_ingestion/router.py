@@ -41,7 +41,7 @@ class ManualSaleRequest(BaseModel):
 
 @router.post("/")
 async def ingest_data(request: IngestionRequest, db: AsyncSession = Depends(get_db)):
-    """ Endpoint clásico (n8n/json genérico) modificado para procesar síncronamente """
+    """ Endpoint genérico modificado para procesar síncronamente """
     try:
         final_payload = request.payload
         if isinstance(final_payload, dict):
