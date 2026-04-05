@@ -2,7 +2,7 @@ from litellm import completion
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from src.modules.intelligence.service import EmbeddingService
-from src.modules.intelligence.models import Product, Sale
+from src.modules.intelligence.models import Product, Sale, Staff, Client
 from sqlalchemy.orm import selectinload
 import os
 
@@ -33,69 +33,125 @@ class ChatService:
         similar_products = result.scalars().all()
 
         sales_context = ""
-        mentioned_customers = []
+        crm_context = ""
+        mentioned_customers = set()
+        mentioned_sellers = set()
         
-        # --- BUSQUEDA DE VENTAS (HISTORIAL COMPRAS) ---
-        # Solo el personal administrativo tiene acceso a esta informacion
-        if role == "admin":
-            # Intentamos detectar si se menciona a un cliente en la pregunta
-            # Para esto, primero obtenemos todos los nombres de clientes unicos para comparar
-            cust_stmt = select(func.distinct(Sale.customer_name))
-            cust_res = await db.execute(cust_stmt)
-            all_customers = [r[0] for r in cust_res.all() if r[0]]
-            
-            # Heurística de detección más flexible:
-            for c in all_customers:
-                c_lower = c.lower()
-                q_lower = question.lower()
-                
-                # 1. Coincidencia directa
-                if c_lower in q_lower:
-                    mentioned_customers.append(c)
-                    continue
-                
-                # 2. Partes del cliente en la pregunta (ej: "Alpha" en "Alpha Systems")
-                # Solo consideramos palabras de más de 3 letras para evitar falsos positivos
-                c_words = [w for w in c_lower.replace(".", "").split() if len(w) > 3]
-                if any(w in q_lower for w in c_words):
-                    mentioned_customers.append(c)
+        q_lower = question.lower()
 
-            if mentioned_customers:
-                sales_stmt = select(Sale).options(selectinload(Sale.product)).where(
-                    Sale.customer_name.in_(mentioned_customers)
-                ).order_by(Sale.sale_date.desc()).limit(10)
+        # --- BUSQUEDA CONTEXTUAL AVANZADA (ADMIN) ---
+        if role == "admin":
+            # 1. Analizar Clientes
+            clients_stmt = select(Client)
+            clients_res = await db.execute(clients_stmt)
+            all_clients = clients_res.scalars().all()
+            
+            relevant_clients = []
+            for c in all_clients:
+                c_name = c.name.lower()
+                c_words = [w for w in c_name.replace(".", "").split() if len(w) > 3]
                 
-                sales_res = await db.execute(sales_stmt)
+                # Coincidencia directa o parcial del nombre del cliente
+                if c_name in q_lower or any(w in q_lower for w in c_words):
+                    relevant_clients.append(c)
+                    mentioned_customers.add(c.name)
+            
+            # Si el usuario pide "todos los clientes" o usa palabras clave
+            if any(k in q_lower for k in ["cliente", "empresa", "comprador", "prospecto"]) and not relevant_clients:
+                relevant_clients = all_clients[:10] # Top 10 por defecTo
+            
+            if relevant_clients:
+                crm_context += "\n[Base de Datos de Clientes]:\n"
+                for c in relevant_clients:
+                    crm_context += f"- Cliente: {c.name} | Email: {c.contact_email} | Tel: {c.phone} | Industria: {c.industry} | Estado: {c.status} | Tipo: {c.customer_type}\n"
+
+            # 2. Analizar Personal (Staff)
+            staff_stmt = select(Staff)
+            staff_res = await db.execute(staff_stmt)
+            all_staff = staff_res.scalars().all()
+            
+            relevant_staff = []
+            for s in all_staff:
+                s_name = s.name.lower()
+                s_words = [w for w in s_name.split() if len(w) > 3]
+                
+                if s_name in q_lower or any(w in q_lower for w in s_words):
+                    relevant_staff.append(s)
+                    mentioned_sellers.add(s.name)
+            
+            if any(k in q_lower for k in ["empleado", "vendedor", "staff", "personal", "equipo", "meta"]) and not relevant_staff:
+                relevant_staff = all_staff[:10]
+            
+            if relevant_staff:
+                crm_context += "\n[Base de Datos de Personal]:\n"
+                for s in relevant_staff:
+                    crm_context += f"- Personal: {s.name} | Rol: {s.role} | Depto: {s.department} | Email: {s.email} | Estado: {s.status} | Meta Mensual: ${s.monthly_goal}\n"
+
+            # 3. Analizar Ventas Históricas
+            # Filtramos si mencionaron a un cliente, a un vendedor, o palabras sobre compras
+            needs_sales = bool(mentioned_customers or mentioned_sellers) or any(k in q_lower for k in ["venta", "vendido", "compr", "historial", "factur"])
+            
+            if needs_sales:
+                sales_query = select(Sale).options(selectinload(Sale.product)).order_by(Sale.sale_date.desc())
+                
+                if mentioned_customers and not mentioned_sellers:
+                    sales_query = sales_query.where(Sale.customer_name.in_(list(mentioned_customers)))
+                elif mentioned_sellers and not mentioned_customers:
+                    sales_query = sales_query.where(Sale.seller_name.in_(list(mentioned_sellers)))
+                elif mentioned_customers and mentioned_sellers:
+                    sales_query = sales_query.where(
+                        or_(
+                            Sale.customer_name.in_(list(mentioned_customers)),
+                            Sale.seller_name.in_(list(mentioned_sellers))
+                        )
+                    )
+                
+                sales_query = sales_query.limit(10)
+                sales_res = await db.execute(sales_query)
                 customer_sales = sales_res.scalars().all()
                 
                 if customer_sales:
-                    sales_context = "\nHistorial de Ventas Relevantes:\n"
+                    sales_context = "\n[Historial de Ventas Relevantes (Últimas 10)]:\n"
                     for s in customer_sales:
-                        prod_name = s.product.name if s.product else "Producto Desconocido"
-                        sales_context += f"- Cliente: {s.customer_name} compró {s.quantity}x {prod_name} por ${s.price_total} el {s.sale_date.strftime('%Y-%m-%d')}\n"
+                        prod_name = s.product.name if s.product else (s.category or "Desconocido")
+                        sales_context += f"- Venta #{s.id}: {s.customer_name} compró {s.quantity}x {prod_name} por ${s.price_total} el {s.sale_date.strftime('%Y-%m-%d')}. Vendedor: {s.seller_name} ({s.payment_method})\n"
 
         # Se construye el contexto para la IA
-        context_text = "\nInformacion de Productos:\n" + "\n".join([
-            f"- {p.name}: {p.description}" + (f" [INSTRUCCIÓN INTERNA PARA EL ASISTENTE: {p.agent_instruction}]" if p.agent_instruction else "")
+        context_text = "\n[Catálogo y Conocimiento (RAG)]:\n" + "\n".join([
+            f"- {p.name} [{p.category or 'General'}]: {p.description} (Precio Base: ${p.price})" + (f" [INSTRUCCIÓN INTERNA: {p.agent_instruction}]" if p.agent_instruction and role == "admin" else "")
             for p in similar_products
         ])
         
-        if sales_context:
-            context_text += "\n" + sales_context
+        if role == "admin":
+            context_text += crm_context + sales_context
 
-        system_prompt = f"""
-        Eres un asistente experto en marketing y ventas. 
-        Usa la información de contexto proporcionada para responder a las preguntas de manera útil y precisa.
-        
-        REGLAS:
-        1. Si la pregunta es sobre compras de clientes, consulta la sección 'Historial de Ventas Relevantes'. Tómate la libertad de relacionar nombres similares (ej: 'Alpha System' es lo mismo que 'Alpha Systems').
-        2. Si la información solicitada está en el contexto, responde detalladamente.
-        3. Si la respuesta REALMENTE no está en el contexto, di cordialmente que no posees esa información específica.
-        4. No inventes datos fuera del contexto.
-
-        Contexto:
-        {context_text}
-        """
+        # Modificación de Prompt según Rol
+        if role == "admin":
+            system_prompt = f"""
+            Eres el Asistente Administrativo Inteligente de este CRM.
+            Tienes acceso total al Catálogo, Historial de Ventas, Directorio de Clientes y Personal.
+            
+            REGLAS:
+            1. Cruza la información si te piden métricas o detalles de personas. No inventes datos.
+            2. Si la respuesta REALMENTE no está en el contexto, indica cordialmente que no tienes esos registros específicos.
+            3. Responde de forma ejecutiva, proactiva y segura.
+            
+            Contexto:
+            {context_text}
+            """
+        else:
+            system_prompt = f"""
+            Eres el Asistente de Atención al Cliente de la empresa.
+            Tu labor es responder dudas sobre nuestros productos o políticas guiándote estrictamente por el conocimiento documentado.
+            
+            REGLAS:
+            1. Mantén un tono amigable, persuasivo y muy profesional. Responde dudas comerciales.
+            2. No hables de precios si no están en el contexto. No inventes productos.
+            3. Si preguntan algo que no puedes responder con el contexto dado, sugiereles contactar directamente a un asesor de ventas.
+            
+            Contexto Disponible:
+            {context_text}
+            """
 
         # Generar respuesta con LLM (Groq)
         response = completion(

@@ -19,3 +19,6 @@ ops/n8n_data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Otros
+PROJECT_STATE.md

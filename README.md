@@ -1,22 +1,22 @@
 # **📘 Documentación:**
 
-**Versión del Documento:** 3.5
+**Versión del Documento:** 4.0
 
-**Estado:** Aprobado para Desarrollo
+**Estado:** Aprobado para Desarrollo (MVP CRM + IA)
 
-**Fecha:** Febrero 2026
+**Fecha:** Abril 2026
 
 ---
 
 **1\. Visión del Producto**
 
-El sistema es una plataforma de inteligencia de negocios dual que cierra el ciclo entre la adquisición de datos y la acción comercial.
+El sistema es una plataforma CRM Integral e Inteligente que unifica operaciones comerciales, facturación, recursos humanos, y analítica de datos potenciada por Inteligencia Artificial "Aware".
 
-* **Ingesta:** Extracción automatizada de datos de compras mediante **Web Scraping** (n8n).  
-* **Procesamiento:** Creación de perfiles de usuario y vectores de gustos mediante **Machine Learning**.  
-* **Actores:**  
-  1. **Agente Administrativo (B2B):** Asistente de IA para Marketing. Genera reportes (PDF/Excel), responde consultas SQL en lenguaje natural y sugiere estrategias.  
-  2. **Agente Cliente (B2C):** Chatbot de recomendaciones personalizadas basadas en búsqueda semántica (vectores).
+* **Core CRM:** Gestión completa de Clientes (Base unificada), Personal (Directorio y Metas de Vendedores), Inventario (Hardware, Software y Servicios) y Registro de Ventas.
+* **Procesamiento AI:** Los objetos generados en el CRM (Productos, Reglas) generan automáticamente *embeddings* semánticos utilizando Machine Learning.
+* **Actores de IA (RAG Automático):**  
+  1. **Agente Administrativo (Tú):** Asistente interno. Conoce el catálogo, audita ventas históricas cruzando datos de empleados y clientes de forma inteligente para emitir diagnósticos y soportes rápidos.  
+  2. **Agente Cliente Público:** Chatbot comercial B2C. Actúa como Ejecutivo de Atención al Cliente, leyendo solo productos marcados como 'publicos', ignorando reglas internas o facturaciones de la empresa para evitar filtraciones de información.
 
 ---
 
@@ -28,38 +28,34 @@ El sistema es una plataforma de inteligencia de negocios dual que cierra el cicl
 
 * **Python:** 3.11.x (Evitar 3.12 por compatibilidad con ciertas librerías de ML).  
 * **FastAPI:** \>= 0.109.0 (Soporte nativo Pydantic v2).  
-* **Pydantic:** \>= 2.6.0 (Obligatorio v2 para compatibilidad con LangChain moderno).  
-* **LangChain:** \>= 0.1.0 (Versiones 0.0.x son obsoletas).  
+* **Pydantic:** \>= 2.6.0.  
 * **SQLAlchemy:** \>= 2.0.25 (Sintaxis moderna asíncrona).
 
 ### **2.2 Infraestructura de Datos**
 
 * **PostgreSQL:** Versión 16 (Requerido para índices HNSW rápidos en pgvector).  
 * **pgvector:** \>= 0.5.0 (Preinstalado en imagen Docker pgvector/pgvector:pg16).  
-* **n8n:** 1.x (Latest) (Ejecutado vía Docker).
 
 ### **2.3 Frontend (JavaScript & Build)**
 
 * **Node.js:** 20.x LTS (Iron) (Requerido para Vite 5).  
 * **Vite:** ^5.1.0 (Motor de construcción).  
 * **React:** 18.2.0 (Estable).
+* **Tailwind CSS:** Para diseño inmersivo y responsivo.
 
 ---
 
 **3\. Arquitectura del Sistema**
 
-### **3.1 Backend: Arquitectura Hexagonal (Ports & Adapters)**
+### **3.1 Backend: Arquitectura Modular Limpia (Python)**
 
-* **Dominio:** Entidades y reglas puras.  
-* **Aplicación:** Casos de uso y orquestación.  
-* **Infraestructura:** Adaptadores para BD, Webhooks n8n, y Clientes MCP/OpenAI.
+* **Dominio:** Entidades relacionales claras (`Sale`, `Product`, `Staff`, `Client`).  
+* **Interacción IA:** Módulo "interaction" con oratoria heurística segmentando datos vía RAG usando LLM remotos gratuitos.
 
-### **3.2 Frontend: Feature-Sliced Design (FSD)**
+### **3.2 Frontend: React + Tailwind UI**
 
-Organización celular por valor de negocio, no por tipo técnico.
-
-* **Capas:** app \-\> pages \-\> widgets \-\> features \-\> entities \-\> shared.  
-* **Regla:** Las capas superiores solo pueden importar de las inferiores.
+* **Estado Unificado:** Panel gerencial interconectado construido centralizadamente en `AdminDashboard.jsx`.
+* **Reglas UI/UX:** Interfaz elegante (dark mode), selects predictivos interbloqueados (Cálculos de Totales e IVA Read-Only previniendo Fallos Operativos Capa 8).
 
 ---
 
@@ -68,25 +64,21 @@ Organización celular por valor de negocio, no por tipo técnico.
 | Área | Tecnología | Rol |
 | :---- | :---- | :---- |
 | **Backend** | **Python 3.11 \+ FastAPI** | API REST asíncrona de alto rendimiento. |
-| **Frontend** | **React (JS) \+ Vite** | Interfaz de usuario reactiva y rápida. |
+| **Frontend** | **React (JS) \+ Tailwind CSS** | Interfaz de usuario rica, inmersiva y reactiva. |
 | **Base de Datos** | **PostgreSQL \+ pgvector** | Almacenamiento relacional y vectorial híbrido. |
-| **Orquestación IA** | **LangChain (LangGraph)** | Gestión de estado y flujo de agentes. |
-| **Conexión IA** | **LiteLLM \+ Instructor** | Abstracción de modelos y salida JSON estructurada. |
-| **Protocolo IA** | **MCP (Model Context Protocol)** | Conexión segura entre LLM y Base de Datos local. |
-| **Automatización** | **n8n (Docker)** | Web Scraping, ETL y tareas programadas. |
-| **Ciencia de Datos** | **Pandas \+ Scikit-learn** | Limpieza de datos y Clustering de usuarios. |
-| **Infraestructura** | **Docker Compose** | Contenerización de servicios (DB, n8n). |
+| **Conexión IA** | **LiteLLM / Groq API** | Abstracción de modelos LLM rápidos y precisos. |
+| **Infraestructura** | **Docker Compose** | Contenerización de servicios (Solo BD) para agilidad de dev. |
 
 ---
 
 **5\. Modelo de Datos Híbrido**
 
-Diseñado para soportar datos "sucios" del scraping y datos "limpios" del negocio.
+Diseñado para soportar CRM dinámico y semántica relacional:
 
-1. **raw\_scraped\_data (JSONB):** Almacén de llegada para datos crudos desde n8n.  
-2. **products (SQL \+ Vector):** Catálogo normalizado con columna embedding para búsqueda semántica.  
-3. **customer\_profiles (SQL \+ Vector):** Perfil del usuario, segmento de riesgo y vector de preferencias.  
-4. **sales\_history (SQL):** Transacciones limpias para reportes financieros.
+1. **products (SQL \+ Vector):** Catálogo comercial interactivo (H/W, S/W, Svcs)  y reglas internas de la empresa con métricas vectoriales de coincidencia semántica.  
+2. **clients (SQL):** Directorio corporativo con bloqueo automático de duplicados y métricas genéricas de contacto.
+3. **staff (SQL):** Control de personal, departamentos y metas de facturación.
+4. **sales (SQL):** Transacciones limpias vinculadas entre inventario, cliente y vendedor para cálculos analíticos al instante.
 
 ---
 
@@ -94,90 +86,62 @@ Diseñado para soportar datos "sucios" del scraping y datos "limpios" del negoci
 
 crm-intelligence-system/  
 ├── ops/                           \# INFRAESTRUCTURA (Docker)  
-│   ├── docker-compose.yml         \# Levanta Postgres 16 y n8n  
-│   └── pg\_init/                   \# Scripts SQL (Activar vector extension)  
+│   ├── compose.yml                \# Levanta Postgres 16 con PgVector  
+│   └── pg\_init/                   \# Scripts de Autoconfiguración BD  
 │  
-├── backend/                       \# API HEXAGONAL (Python)  
+├── backend/                       \# API (Python)  
 │   ├── src/  
 │   │   ├── modules/               \# Bounded Contexts  
-│   │   │   ├── data\_ingestion/    \# ETL & Scraping  
-│   │   │   ├── intelligence/      \# Perfiles & Vectores  
-│   │   │   └── interaction/       \# Chatbots & Reportes  
-│   │   ├── shared/                \# Kernel compartido  
+│   │   │   ├── data\_ingestion/    \# Enpoints de inyección de CRM manual  
+│   │   │   ├── intelligence/      \# Tablas Generales (Catálogos, Vectores)  
+│   │   │   └── interaction/       \# Core de Generación LLM (Chatbots)  
 │   │   └── main.py                \# Entry point FastAPI  
-│   ├── pyproject.toml             \# Dependencias Python  
-│   └── alembic/                   \# Migraciones BD  
+│   └── requirements.txt           \# Dependencias Python  
 │  
-└── frontend/                      \# UI CELULAR (React JS \+ Vite)  
+└── frontend/                      \# UI (React JS \+ Vite)  
     ├── src/  
-    │   ├── app/                   \# Config Global  
-    │   ├── pages/                 \# Vistas (Admin/Customer)  
-    │   ├── widgets/               \# Bloques UI complejos  
-    │   ├── features/              \# Lógica de negocio (Exportar, Filtrar)  
-    │   ├── entities/              \# Modelos visuales  
-    │   └── shared/                \# UI Kit  
-    ├── vite.config.js             \# Config Proxy y Build  
-    ├── jsconfig.json              \# Alias de rutas (@/)  
+    │   ├── pages/                 \# Dashboard Gerencial Central  
+    │   └── index.css              \# Variables y utilidades nativas de estilo  
     └── package.json               \# Dependencias Node
 
 ---
 
-**7\. Estrcutura de commits:**
+**7\. Estructura de commits:**
 
 Estructura: *tipo(alcance): descripción breve*
 
 1. Los Tipos (tipo)
-
-Indican qué clase de cambio estás haciendo:
-
-- feat (Feature/Característica): Cuando añades una nueva funcionalidad al código (ej. "Crear el módulo de scraping", "Añadir botón de exportar PDF").
-
-- fix (Fix/Reparación): Cuando arreglas un error o bug (ej. "Corregir error 500 al subir archivo vacío").
-
-- docs (Documentación): Cambios solo en documentación (ej. "Actualizar README", "Agregar comentarios al código", "Subir Capítulo 1").
-
-- style (Estilo): Cambios de formato (espacios, puntos y coma, formato de Python con Black) que no afectan la lógica.
-
-- refactor (Refactorización): Reescribir código para mejorarlo sin cambiar su comportamiento externo (ej. "Mover lógica de usuario a un servicio separado").
-
-- test (Pruebas): Añadir o corregir tests unitarios.
-
-- chore (Tareas rutinarias): Cambios en configuración, herramientas de construcción, Docker o dependencias (ej. "Actualizar versión de React", "Configurar Docker Compose").
-
-2. El Alcance (alcance)
-Indica en qué parte del sistema hiciste el cambio.
-
-- backend: Cambios en la API Python.
-
-- frontend: Cambios en la web React.
-
-- infra: Cambios en Docker, Nginx o n8n.
-
-- db: Cambios en tablas SQL o migraciones.
-
-- data: Cambios relacionados con los CSV o JSONs de scraping.
+- feat: Añadir funcionalidad.
+- fix: Reparación de error/bug.
+- docs: Documentación.
+- style: Cambios de formato estético UI o código puro.
+- refactor: Mejorar lógica interna/rediseños sin destruir features.
+- chore: Tareas de servidor o limpieza.
 
 ---
 
 **8\. Guía de Inicio Rápido (Developers)**
 
 1. **Infraestructura:**  
-   Bash  
-   cd ops && docker-compose up \-d  \# Inicia BD y n8n
+   ```bash  
+   cd ops && docker-compose up -d  # Inicia BD
+   ```
 
 2. **Backend:**  
-   Bash  
+   ```bash  
    cd backend  
-   python \-m venv venv             \# Python 3.11  
-   source venv/bin/activate  
-   pip install \-e .                \# Instala dependencias de pyproject.toml  
-   uvicorn src.main:app \--reload
+   python -m venv venv  
+   source venv/bin/activate  # O ./venv/Scripts/Activate en Windows
+   pip install -r requirements.txt
+   python -m uvicorn src.main:app --reload
+   ```
 
 3. **Frontend:**  
-   Bash  
+   ```bash  
    cd frontend  
-   npm install                     \# Node 20  
-   npm run dev                     \# Inicia Vite
+   npm install  
+   npm run dev
+   ```
 
 ---
 
@@ -185,11 +149,9 @@ Indica en qué parte del sistema hiciste el cambio.
 
 ### **9.1 Límites de la IA (Groq Free Tier)**
 El sistema utiliza actualmente el modelo `llama-3.3-70b-versatile` a través de la capa gratuita de Groq.
-*   **Límites actuales:** ~30 peticiones por minuto (RPM), ~1,000 peticiones por día.
-*   **Recomendación:** Para uso masivo en producción, considera añadir una tarjeta de crédito en Groq o cambiar el proveedor (en `backend/src/modules/interaction/service.py`) a OpenAI/Anthropic.
+*   **Límites actuales:** ~30 peticiones por minuto.
+*   **Recomendación:** Considerar API Keys empresariales propias si el flujo CRM crece de manera exponencial o corporativa.
 
-### **9.2 Seguridad (RBAC)**
-El sistema es **Secure by Default**.
-*   Todo dato ingresado sin `access_level` explícito será marcado como `private`.
-*   El Chat Widget público (`role='customer'`) **NO** mostrará estos datos.
-*   Debes etiquetar explícitamente como `public` la información que desees que los clientes vean.
+### **9.2 Privacidad de Datos y Control RAG**
+* Los agentes validan agresivamente el permiso de lectura según el ROL (`Customer` vs `Admin`).
+* Los productos nuevos creados desde cero protegen a la empresa inicializándose en estado `private`.
