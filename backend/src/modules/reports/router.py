@@ -15,7 +15,9 @@ class ExportCustomRequest(BaseModel):
     data: list
     format: str # 'pdf' | 'excel'
 
-router = APIRouter(prefix="/reports", tags=["Reports"])
+from src.modules.auth.dependencies import get_current_user
+
+router = APIRouter(prefix="/reports", tags=["Reports"], dependencies=[Depends(get_current_user)])
 
 report_service = ReportService()
 

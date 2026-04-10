@@ -16,9 +16,22 @@ from src.modules.interaction.router import router as chat_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from src.shared.database import SessionLocal
+    from sqlalchemy.future import select
+    from src.modules.intelligence.models import User
+    from src.modules.auth.service import get_password_hash
+
     # Crear tablas (Si no existen)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Inyección de usuarios por defecto
+    async with SessionLocal() as db:
+        admin_user = await db.execute(select(User).where(User.email == "admin@epsilon.com"))
+        if not admin_user.scalar_one_or_none():
+            db.add(User(email="admin@epsilon.com", hashed_password=get_password_hash("admin123"), role="admin"))
+            db.add(User(email="usuario@epsilon.com", hashed_password=get_password_hash("usuario123"), role="usuario"))
+            await db.commit()
 
     try:
         # Verificar conexión
@@ -47,6 +60,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from src.modules.auth.router import router as auth_router
+
+app.include_router(auth_router)
 app.include_router(ingestion_router)
 app.include_router(intelligence_router)
 app.include_router(chat_router)

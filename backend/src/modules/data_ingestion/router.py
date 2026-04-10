@@ -7,8 +7,10 @@ from src.modules.data_ingestion.models import RawData
 from src.modules.intelligence.processor import ContentProcessor
 import pandas as pd
 import io
+from src.modules.auth.dependencies import get_current_user, RequireRole
+from src.modules.intelligence.models import User
 
-router = APIRouter(prefix="/ingestion", tags= ["Ingestion"])
+router = APIRouter(prefix="/ingestion", tags= ["Ingestion"], dependencies=[Depends(get_current_user)])
 processor = ContentProcessor()
 
 from sqlalchemy import text
@@ -124,7 +126,7 @@ async def update_sale(sale_id: int, request: EditSaleRequest, db: AsyncSession =
     await db.commit()
     return {"status": "success", "message": "Venta actualizada"}
 
-@router.delete("/sales/{sale_id}")
+@router.delete("/sales/{sale_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def delete_sale(sale_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Sale).where(Sale.id == sale_id))
     sale = result.scalar_one_or_none()

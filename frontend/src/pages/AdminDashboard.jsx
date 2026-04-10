@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, Brush, TrendingUp, Sparkles, Bot, Trash2, Plus, RefreshCw, Users, Briefcase } from 'lucide-react';
+import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, Brush, TrendingUp, Sparkles, Bot, Trash2, Plus, RefreshCw, Users, Briefcase, LogOut } from 'lucide-react';
 import { ChatWindow } from '../widgets/chat/ui/ChatWindow';
+import { useAuth } from '../shared/authContext';
 
 const AdminDashboard = () => {
+    const { user, logout } = useAuth();
     // Tab State
     const [activeTab, setActiveTab] = useState('sales'); // default to sales as requested
 
@@ -534,9 +536,16 @@ const AdminDashboard = () => {
                                     </div>
                                 )}
                             </div>
+                            
+                            <div className="ml-4 border-l border-[var(--border-strong)] pl-4 flex items-center gap-3 hidden sm:flex">
+                                <div className="text-right flex flex-col justify-center">
+                                    <span className="text-xs font-bold text-[var(--text-main)] block leading-tight">{user?.email || 'Usuario'}</span>
+                                    <span className="text-[9px] uppercase font-black text-[var(--text-highlight)] tracking-wider">Rol: {user?.role || 'Admin'}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <nav className="flex space-x-8">
+                        <nav className="flex items-center space-x-6">
                             {[
                                 { id: 'inventory', label: 'Conocimiento (BD)', icon: Package },
                                 { id: 'sales', label: 'Ventas', icon: TrendingUp },
@@ -554,6 +563,16 @@ const AdminDashboard = () => {
                                     {tab.label}
                                 </button>
                             ))}
+                            
+                            <div className="border-l border-[var(--border-strong)] h-6 mx-2"></div>
+                            
+                            <button
+                                onClick={logout}
+                                className="flex items-center gap-2 px-3 py-2 text-sm font-bold text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-xl transition-all duration-300"
+                                title="Cerrar Sesión"
+                            >
+                                <LogOut size={16} /> <span className="hidden md:inline">Salir</span>
+                            </button>
                         </nav>
                     </div>
                 </div>
@@ -776,32 +795,36 @@ const AdminDashboard = () => {
                                         <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Importación masiva o manual de documentos de ventas.</p>
                                     </button>
 
-                                    <button onClick={() => setInventoryView('products')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-emerald-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-transparent blur-xl rounded-full"></div>
-                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
-                                            <Package className="text-emerald-400 drop-shadow-sm" size={32} />
-                                        </div>
-                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-emerald-400 transition-colors relative z-10">Catálogo / Inventario</h3>
-                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Registro de hardware, software y servicios a la cartera.</p>
-                                    </button>
+                                    {user?.role === 'admin' && (
+                                        <>
+                                            <button onClick={() => setInventoryView('products')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-emerald-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-transparent blur-xl rounded-full"></div>
+                                                <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                                    <Package className="text-emerald-400 drop-shadow-sm" size={32} />
+                                                </div>
+                                                <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-emerald-400 transition-colors relative z-10">Catálogo / Inventario</h3>
+                                                <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Registro de hardware, software y servicios a la cartera.</p>
+                                            </button>
 
-                                    <button onClick={() => setInventoryView('staff')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-orange-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden md:col-start-1 lg:col-start-auto">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-500/20 to-transparent blur-xl rounded-full"></div>
-                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
-                                            <Briefcase className="text-orange-400 drop-shadow-sm" size={32} />
-                                        </div>
-                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-orange-400 transition-colors relative z-10">Gestión de Personal</h3>
-                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Gestión integral de los representantes y vendedores.</p>
-                                    </button>
+                                            <button onClick={() => setInventoryView('staff')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-orange-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden md:col-start-1 lg:col-start-auto">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-500/20 to-transparent blur-xl rounded-full"></div>
+                                                <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                                    <Briefcase className="text-orange-400 drop-shadow-sm" size={32} />
+                                                </div>
+                                                <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-orange-400 transition-colors relative z-10">Gestión de Personal</h3>
+                                                <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Gestión integral de los representantes y vendedores.</p>
+                                            </button>
 
-                                    <button onClick={() => setInventoryView('clients')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-rose-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/20 to-transparent blur-xl rounded-full"></div>
-                                        <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
-                                            <Users className="text-rose-400 drop-shadow-sm" size={32} />
-                                        </div>
-                                        <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-rose-400 transition-colors relative z-10">Cartera de Clientes</h3>
-                                        <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Registro estructurado de clientes y empresas objetivo.</p>
-                                    </button>
+                                            <button onClick={() => setInventoryView('clients')} className="bg-[var(--bg-card)] border border-[var(--border-base)] hover:border-[var(--border-hover-alt)] hover:shadow-xl hover:shadow-rose-900/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center transition-all group relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/20 to-transparent blur-xl rounded-full"></div>
+                                                <div className="w-16 h-16 bg-[var(--bg-input)] rounded-2xl flex items-center justify-center mb-4 border border-[var(--border-faint)] group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-300 relative z-10 shadow-inner">
+                                                    <Users className="text-rose-400 drop-shadow-sm" size={32} />
+                                                </div>
+                                                <h3 className="text-lg font-black text-[var(--text-main)] mb-2 group-hover:text-rose-400 transition-colors relative z-10">Cartera de Clientes</h3>
+                                                <p className="text-xs text-[var(--text-sec)] leading-relaxed font-medium">Registro estructurado de clientes y empresas objetivo.</p>
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}

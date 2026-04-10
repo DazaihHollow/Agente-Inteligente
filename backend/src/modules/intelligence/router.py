@@ -7,10 +7,11 @@ from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy import select, update
 from src.modules.intelligence.models import Product, Staff, Client
+from src.modules.auth.dependencies import get_current_user, RequireRole
 
-router = APIRouter(prefix="/intelligence", tags=["Intelligence"])
+router = APIRouter(prefix="/intelligence", tags=["Intelligence"], dependencies=[Depends(get_current_user)])
 
-@router.post("/process")
+@router.post("/process", dependencies=[Depends(RequireRole(["admin"]))])
 async def process_content(limit: int = 100, db: AsyncSession = Depends(get_db)):
     """
     Gatillo manual para procesar datos crudos y convertirlos en vectores.
@@ -134,7 +135,7 @@ async def recalculate_vector(product_id: int, db: AsyncSession = Depends(get_db)
     
     return {"status": "success", "message": "Vector de IA recalculado."}
 
-@router.post("/products")
+@router.post("/products", dependencies=[Depends(RequireRole(["admin"]))])
 async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db)):
     """
     Crea un nuevo producto en el inventario calculando su vector de IA automáticamente.
@@ -160,7 +161,7 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
     await db.refresh(new_product)
     return {"status": "success", "message": "Producto creado correctamente", "product_id": new_product.id}
 
-@router.delete("/products/{product_id}")
+@router.delete("/products/{product_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def delete_product(product_id: int, db: AsyncSession = Depends(get_db)):
     """
     Elimina un producto del inventario.
@@ -206,7 +207,7 @@ async def list_staff(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Staff).order_by(Staff.id))
     return result.scalars().all()
 
-@router.post("/staff")
+@router.post("/staff", dependencies=[Depends(RequireRole(["admin"]))])
 async def create_staff(staff: StaffCreate, db: AsyncSession = Depends(get_db)):
     """Crea un nuevo empleado."""
     new_staff = Staff(**staff.model_dump())
@@ -215,7 +216,7 @@ async def create_staff(staff: StaffCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(new_staff)
     return {"status": "success", "message": "Empleado creado correctamente", "staff_id": new_staff.id}
 
-@router.put("/staff/{staff_id}")
+@router.put("/staff/{staff_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def update_staff(staff_id: int, staff_in: StaffUpdate, db: AsyncSession = Depends(get_db)):
     """Actualiza datos de un empleado."""
     result = await db.execute(select(Staff).where(Staff.id == staff_id))
@@ -231,7 +232,7 @@ async def update_staff(staff_id: int, staff_in: StaffUpdate, db: AsyncSession = 
         await db.commit()
     return {"status": "success", "message": "Empleado actualizado"}
 
-@router.delete("/staff/{staff_id}")
+@router.delete("/staff/{staff_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def delete_staff(staff_id: int, db: AsyncSession = Depends(get_db)):
     """Elimina un empleado."""
     result = await db.execute(select(Staff).where(Staff.id == staff_id))
@@ -250,7 +251,7 @@ async def list_clients(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Client).order_by(Client.id))
     return result.scalars().all()
 
-@router.post("/clients")
+@router.post("/clients", dependencies=[Depends(RequireRole(["admin"]))])
 async def create_client(client: ClientCreate, db: AsyncSession = Depends(get_db)):
     """Crea un nuevo cliente."""
     new_client = Client(**client.model_dump())
@@ -259,7 +260,7 @@ async def create_client(client: ClientCreate, db: AsyncSession = Depends(get_db)
     await db.refresh(new_client)
     return {"status": "success", "message": "Cliente creado correctamente", "client_id": new_client.id}
 
-@router.put("/clients/{client_id}")
+@router.put("/clients/{client_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def update_client(client_id: int, client_in: ClientUpdate, db: AsyncSession = Depends(get_db)):
     """Actualiza datos de un cliente."""
     result = await db.execute(select(Client).where(Client.id == client_id))
@@ -275,7 +276,7 @@ async def update_client(client_id: int, client_in: ClientUpdate, db: AsyncSessio
         await db.commit()
     return {"status": "success", "message": "Cliente actualizado"}
 
-@router.delete("/clients/{client_id}")
+@router.delete("/clients/{client_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def delete_client(client_id: int, db: AsyncSession = Depends(get_db)):
     """Elimina un cliente."""
     result = await db.execute(select(Client).where(Client.id == client_id))

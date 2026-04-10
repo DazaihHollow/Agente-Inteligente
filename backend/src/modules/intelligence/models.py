@@ -1,8 +1,17 @@
-from sqlalchemy import Column, Integer, String, Text, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from pgvector.sqlalchemy import Vector
 from src.shared.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    role = Column(String, default='usuario') # 'admin' | 'usuario'
+    is_active = Column(Boolean, default=True)
 
 class Product(Base):
     __tablename__ = "products"
