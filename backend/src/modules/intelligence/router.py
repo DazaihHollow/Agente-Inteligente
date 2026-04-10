@@ -203,9 +203,34 @@ async def list_products(db: AsyncSession = Depends(get_db)):
 
 @router.get("/staff")
 async def list_staff(db: AsyncSession = Depends(get_db)):
-    """Lista todos los empleados."""
-    result = await db.execute(select(Staff).order_by(Staff.id))
-    return result.scalars().all()
+    """Lista todos los empleados incluyendo su estatus de usuario en la plataforma."""
+    from src.modules.intelligence.models import User
+    
+    # Obtenemos empleados y usuarios (Outer Join por email)
+    result = await db.execute(
+        select(Staff, User.role, User.is_active)
+        .outerjoin(User, Staff.email == User.email)
+        .order_by(Staff.id)
+    )
+    
+    formatted_staff = []
+    for row in result.all():
+        s = row[0]
+        formatted_staff.append({
+            "id": s.id,
+            "name": s.name,
+            "email": s.email,
+            "department": s.department,
+            "role": s.role,
+            "status": s.status,
+            "monthly_goal": s.monthly_goal,
+            "platform_account": {
+                "registered": row[1] is not None,
+                "role": row[1],
+                "active": row[2]
+            }
+        })
+    return formatted_staff
 
 @router.post("/staff", dependencies=[Depends(RequireRole(["admin"]))])
 async def create_staff(staff: StaffCreate, db: AsyncSession = Depends(get_db)):
@@ -265,6 +290,38 @@ async def register_staff_as_user(staff_id: int, request: UserFromStaffRequest, d
     await db.commit()
     
     return {"status": "success", "message": f"Usuario para {staff.name} creado exitosamente con el rol {request.role}"}
+
+class UserUpdateFromStaff(BaseModel):
+    password: Optional[str] = None
+    role: Optional[str] = None
+
+@router.put("/staff/{staff_id}/user", dependencies=[Depends(RequireRole(["admin"]))])
+async def update_staff_user(staff_id: int, request: UserUpdateFromStaff, db: AsyncSession = Depends(get_db)):
+    """
+    Actualiza el rol o la contraseña del usuario vinculado a un empleado.
+    """
+    # 1. Buscar empleado
+    res = await db.execute(select(Staff).where(Staff.id == staff_id))
+    staff = res.scalar_one_or_none()
+    if not staff:
+        raise HTTPException(404, "Empleado no encontrado")
+        
+    # 2. Buscar usuario
+    from src.modules.intelligence.models import User
+    user_res = await db.execute(select(User).where(User.email == staff.email))
+    user = user_res.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "Este empleado no tiene una cuenta vinculada")
+        
+    # 3. Aplicar cambios
+    from src.modules.auth.service import get_password_hash
+    if request.password:
+        user.hashed_password = get_password_hash(request.password)
+    if request.role:
+        user.role = request.role
+        
+    await db.commit()
+    return {"status": "success", "message": "Credenciales actualizadas correctamente"}
 
 @router.delete("/staff/{staff_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def delete_staff(staff_id: int, db: AsyncSession = Depends(get_db)):

@@ -1375,6 +1375,7 @@ const AdminDashboard = () => {
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Identidad</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Cargo & Departamento</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Desempeño & Estado</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Plataforma</th>
                                                 <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-accent)] uppercase tracking-wider">Acción</th>
                                             </tr>
                                         </thead>
@@ -1396,6 +1397,16 @@ const AdminDashboard = () => {
                                                         </div>
                                                         <div className="text-xs text-[var(--text-muted)]">Meta: <span className="text-blue-400 font-bold">${st.monthly_goal}</span>/mes</div>
                                                     </td>
+                                                    <td className="px-6 py-4">
+                                                        {st.platform_account?.registered ? (
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/30 text-[10px] text-indigo-400 font-black uppercase text-center">Registrado</span>
+                                                                <span className="text-[10px] text-[var(--text-muted)] text-center font-bold">{st.platform_account.role}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-[10px] text-[var(--text-muted)] italic">Sin acceso</span>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-4 text-right flex justify-end gap-2">
                                                         <button onClick={() => setEditingStaff({...st})} className="text-[var(--text-highlight)] hover:bg-purple-900/30 p-2 rounded-full transition" title="Editar Empleado">
                                                             <Edit size={18} />
@@ -1407,7 +1418,7 @@ const AdminDashboard = () => {
                                                 </tr>
                                             ))}
                                             {staffList.length === 0 && (
-                                                <tr><td colSpan="4" className="px-6 py-10 text-center text-[var(--text-sec)]">No hay personal registrado.</td></tr>
+                                                <tr><td colSpan="5" className="px-6 py-10 text-center text-[var(--text-sec)]">No hay personal registrado.</td></tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -1898,56 +1909,120 @@ const AdminDashboard = () => {
                             {editingStaff.id && (
                                 <div className="mt-4 p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
                                     <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <Key size={14} /> Acceso a Plataforma
+                                        <Key size={14} /> Gestión de Acceso
                                     </h4>
-                                    {registerStep === 'form' ? (
-                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                                            <input 
-                                                type="password" 
-                                                placeholder="Asignar Contraseña Temporal" 
-                                                className="w-full bg-[var(--bg-input)] border border-indigo-500/30 text-white rounded-xl p-3 text-sm focus:border-indigo-500 outline-none"
-                                                id="temp_pass"
-                                            />
-                                            <select id="user_role" className="w-full bg-[var(--bg-input)] border border-indigo-500/30 text-white rounded-xl p-3 text-sm outline-none">
-                                                <option value="usuario">Rol: Usuario Estándar</option>
-                                                <option value="admin">Rol: Administrador</option>
-                                            </select>
-                                            <div className="flex gap-2">
-                                                <button 
-                                                    onClick={() => setRegisterStep(null)}
-                                                    className="flex-1 py-3 text-xs font-bold text-gray-400 hover:text-white transition-colors"
-                                                >
-                                                    Cancelar
-                                                </button>
-                                                <button 
-                                                    onClick={async () => {
-                                                        const pass = document.getElementById('temp_pass').value;
-                                                        const role = document.getElementById('user_role').value;
-                                                        if(!pass) return alert("Por favor define una contraseña");
-                                                        try {
-                                                            await axios.post(`http://localhost:8000/intelligence/staff/${editingStaff.id}/register-user`, {
-                                                                password: pass,
-                                                                role: role
-                                                            });
-                                                            alert("¡Usuario creado y vinculado exitosamente!");
-                                                            setRegisterStep(null);
-                                                        } catch(err) {
-                                                            alert(err.response?.data?.detail || "Error al crear usuario");
-                                                        }
-                                                    }}
-                                                    className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs uppercase"
-                                                >
-                                                    Confirmar Acceso
-                                                </button>
+                                    
+                                    {editingStaff.platform_account?.registered ? (
+                                        <div className="space-y-4">
+                                            <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-center">
+                                                <p className="text-[10px] font-bold text-indigo-300 uppercase">Estado Actual</p>
+                                                <p className="text-xs font-black text-white mt-1">Usuario {editingStaff.platform_account.role.toUpperCase()}</p>
                                             </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Nuevo Rol</label>
+                                                    <select 
+                                                        className="w-full bg-[var(--bg-input)] border border-indigo-500/30 text-white rounded-xl p-3 text-xs outline-none"
+                                                        defaultValue={editingStaff.platform_account.role}
+                                                        onChange={async (e) => {
+                                                            try {
+                                                                await axios.put(`http://localhost:8000/intelligence/staff/${editingStaff.id}/user`, { role: e.target.value });
+                                                                alert("Rol actualizado"); fetchAllData();
+                                                            } catch(err) { alert("Error al actualizar"); }
+                                                        }}
+                                                    >
+                                                        <option value="usuario">Usuario</option>
+                                                        <option value="admin">Admin</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Acción Rápida</label>
+                                                    <button 
+                                                        onClick={() => setRegisterStep('reset_pass')}
+                                                        className="w-full py-3 bg-[var(--bg-item)] hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-xl font-bold text-[10px] uppercase transition-all"
+                                                    >
+                                                        Reset Password
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {registerStep === 'reset_pass' && (
+                                                <div className="p-4 bg-indigo-900/20 rounded-xl border border-indigo-500/30 animate-in slide-in-from-top-1">
+                                                    <label className="block text-[10px] font-bold text-indigo-300 uppercase mb-2">Nueva Clave para {editingStaff.name}</label>
+                                                    <div className="flex gap-2">
+                                                        <input id="reset_pass_val" type="password" placeholder="••••••••" className="flex-1 bg-[var(--bg-input)] border border-indigo-500/50 text-white rounded-lg p-2 text-sm outline-none" />
+                                                        <button 
+                                                            onClick={async () => {
+                                                                const val = document.getElementById('reset_pass_val').value;
+                                                                if(!val) return;
+                                                                try {
+                                                                    await axios.put(`http://localhost:8000/intelligence/staff/${editingStaff.id}/user`, { password: val });
+                                                                    alert("Contraseña modificada"); setRegisterStep(null);
+                                                                } catch(err) { alert("Error al resetear"); }
+                                                            }}
+                                                            className="px-4 bg-indigo-600 text-white rounded-lg font-bold text-xs"
+                                                        >
+                                                            OK
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
-                                        <button 
-                                            onClick={() => setRegisterStep('form')}
-                                            className="w-full py-3 border border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10 rounded-xl font-bold text-xs uppercase transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <LogOut size={16} className="rotate-180" /> Autorizar Credenciales de Sistema
-                                        </button>
+                                        <>
+                                            {registerStep === 'form' ? (
+                                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                                    <input 
+                                                        type="password" 
+                                                        placeholder="Asignar Contraseña Temporal" 
+                                                        className="w-full bg-[var(--bg-input)] border border-indigo-500/30 text-white rounded-xl p-3 text-sm focus:border-indigo-500 outline-none"
+                                                        id="temp_pass"
+                                                    />
+                                                    <select id="user_role" className="w-full bg-[var(--bg-input)] border border-indigo-500/30 text-white rounded-xl p-3 text-sm outline-none">
+                                                        <option value="usuario">Rol: Usuario Estándar</option>
+                                                        <option value="admin">Rol: Administrador</option>
+                                                    </select>
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            onClick={() => setRegisterStep(null)}
+                                                            className="flex-1 py-3 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                        <button 
+                                                            onClick={async () => {
+                                                                const pass = document.getElementById('temp_pass').value;
+                                                                const role = document.getElementById('user_role').value;
+                                                                if(!pass) return alert("Por favor define una contraseña");
+                                                                try {
+                                                                    await axios.post(`http://localhost:8000/intelligence/staff/${editingStaff.id}/register-user`, {
+                                                                        password: pass,
+                                                                        role: role
+                                                                    });
+                                                                    alert("¡Usuario creado y vinculado exitosamente!");
+                                                                    setRegisterStep(null);
+                                                                    setEditingStaff(null);
+                                                                    fetchAllData();
+                                                                } catch(err) {
+                                                                    alert(err.response?.data?.detail || "Error al crear usuario");
+                                                                }
+                                                            }}
+                                                            className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs uppercase"
+                                                        >
+                                                            Confirmar Acceso
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => setRegisterStep('form')}
+                                                    className="w-full py-3 border border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10 rounded-xl font-bold text-xs uppercase transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <LogOut size={16} className="rotate-180" /> Autorizar Credenciales
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                     <p className="mt-3 text-[10px] text-gray-500 leading-relaxed italic">
                                         * Esto permitirá al empleado entrar a Epsilon usando su correo corporativo.
