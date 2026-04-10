@@ -1,19 +1,12 @@
-import os
 from litellm import completion
-import litellm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from src.modules.intelligence.service import EmbeddingService
 from src.modules.intelligence.models import Product, Sale, Staff, Client
 from sqlalchemy.orm import selectinload
-from dotenv import load_dotenv
-
-load_dotenv()
-os.environ['LITELLM_LOG'] = 'DEBUG'
+import os
 
 class ChatService:
-
-
     def __init__(self):
         self.embedding_service = EmbeddingService()
         # Se utilizara Groq (Llama 3.3) para generar las respuestas (Gratis y Rapido)

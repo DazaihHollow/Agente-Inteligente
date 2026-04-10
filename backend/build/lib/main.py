@@ -1,9 +1,6 @@
 import asyncio
 import sys
 from contextlib import asynccontextmanager
-from dotenv import load_dotenv
-
-load_dotenv()  # Cargar variables desde el archivo .env a os.environ
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())

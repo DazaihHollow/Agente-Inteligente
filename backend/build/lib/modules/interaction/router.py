@@ -21,6 +21,4 @@ async def chat_endpoint(request: ChatRequest, db: AsyncSession = Depends(get_db)
         resultado = await service.ask(request.message, db, role=request.role)
         return resultado
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
