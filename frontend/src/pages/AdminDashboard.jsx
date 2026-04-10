@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, Brush, TrendingUp, Sparkles, Bot, Trash2, Plus, RefreshCw, Users, Briefcase, LogOut } from 'lucide-react';
+import { Download, FileText, Edit, Save, X, Search, ChevronDown, Calendar, MessageSquare, Package, Brush, TrendingUp, Sparkles, Bot, Trash2, Plus, RefreshCw, Users, Briefcase, LogOut, UserCircle, Shield, Key, ArrowLeft, History, PieChart as PieChartIcon, DollarSign } from 'lucide-react';
 import { ChatWindow } from '../widgets/chat/ui/ChatWindow';
 import { useAuth } from '../shared/authContext';
 
@@ -9,6 +9,10 @@ const AdminDashboard = () => {
     const { user, logout } = useAuth();
     // Tab State
     const [activeTab, setActiveTab] = useState('sales'); // default to sales as requested
+    const [profileData, setProfileData] = useState(null);
+    const [isProfileLoading, setIsProfileLoading] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({ old: '', new: '', confirm: '' });
+    const [registerStep, setRegisterStep] = useState(null); // Para el flujo de registro de usuarios admin
 
     // Inventory State
     const [inventoryView, setInventoryView] = useState('menu'); // 'menu' | 'knowledge' | 'ingest' | 'products' | 'staff' | 'clients'
@@ -85,9 +89,27 @@ const AdminDashboard = () => {
 
     const [loading, setLoading] = useState(true);
 
+    const fetchProfile = async () => {
+        setIsProfileLoading(true);
+        try {
+            const res = await axios.get('http://localhost:8000/auth/profile');
+            setProfileData(res.data);
+        } catch (err) {
+            console.error("Error fetching profile:", err);
+        } finally {
+            setIsProfileLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchAllData();
     }, [selectedMonth, selectedYear, selectedCustomer]);
+
+    useEffect(() => {
+        if (activeTab === 'profile') {
+            fetchProfile();
+        }
+    }, [activeTab]);
 
     useEffect(() => {
         const fetchBcvRates = async () => {
@@ -565,6 +587,14 @@ const AdminDashboard = () => {
                             ))}
                             
                             <div className="border-l border-[var(--border-strong)] h-6 mx-2"></div>
+
+                            <button
+                                onClick={() => setActiveTab('profile')}
+                                className={`p-2.5 rounded-xl border transition-all duration-300 relative group ${activeTab === 'profile' ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'bg-[var(--bg-item)] border-[var(--border-faint)] text-[var(--text-sec)] hover:bg-[var(--bg-card)]'}`}
+                                title="Mi Perfil y Estadísticas"
+                            >
+                                <UserCircle size={22} className="group-hover:scale-110 transition-transform" />
+                            </button>
                             
                             <button
                                 onClick={logout}
@@ -579,6 +609,183 @@ const AdminDashboard = () => {
             </div>
 
             <main className={activeTab === 'custom' ? "flex flex-col h-[calc(100vh-5rem)] w-full" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
+
+                {/* PROFILE TAB */}
+                {activeTab === 'profile' && (
+                    <div className="animate-in fade-in zoom-in-95 duration-400">
+                        {isProfileLoading ? (
+                            <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--text-sec)]">
+                                <RefreshCw className="animate-spin mb-4 text-[var(--text-highlight)]" size={48} />
+                                <p className="font-bold tracking-widest uppercase text-xs">Cargando tu ADN comercial...</p>
+                            </div>
+                        ) : profileData ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* COLUMNA IZQUIERDA: RESUMEN Y SEGURIDAD */}
+                                <div className="lg:col-span-1 space-y-6">
+                                    {/* CARD USUARIO */}
+                                    <div className="bg-[var(--bg-card)] rounded-3xl p-8 border border-[var(--border-base)] shadow-xl relative overflow-hidden group">
+                                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"></div>
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="w-24 h-24 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30 shadow-inner group-hover:scale-105 transition-transform duration-500">
+                                                <UserCircle size={60} className="text-purple-400" />
+                                            </div>
+                                            <h3 className="text-2xl font-black text-[var(--text-main)] mb-1">{profileData.staff?.name || 'Usuario Epsilon'}</h3>
+                                            <p className="text-indigo-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2 mb-4">
+                                                <Shield size={14} /> {profileData.user?.role}
+                                            </p>
+                                            <div className="w-full h-px bg-[var(--border-faint)] mb-6"></div>
+                                            
+                                            <div className="w-full space-y-3 text-left">
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-[var(--text-sec)] font-medium">Email</span>
+                                                    <span className="text-[var(--text-main)] font-bold">{profileData.user?.email}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-[var(--text-sec)] font-medium">Departamento</span>
+                                                    <span className="text-[var(--text-main)] font-bold">{profileData.staff?.department || 'N/A'}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-[var(--text-sec)] font-medium">Estado</span>
+                                                    <span className="text-green-400 font-bold">{profileData.staff?.status || 'Activo'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* CAMBIO DE CONTRASEÑA */}
+                                    <div className="bg-[#0d0a20] rounded-3xl p-8 border border-purple-500/10 shadow-lg">
+                                        <h4 className="text-sm font-black text-white uppercase tracking-wider mb-6 flex items-center gap-2">
+                                            <Key className="text-purple-400" size={16} /> Configuración de Acceso
+                                        </h4>
+                                        <form className="space-y-4" onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            if(passwordForm.new !== passwordForm.confirm) {
+                                                alert("Las contraseñas no coinciden"); return;
+                                            }
+                                            try {
+                                                await axios.put('http://localhost:8000/auth/change-password', {
+                                                    old_password: passwordForm.old,
+                                                    new_password: passwordForm.new
+                                                });
+                                                alert("Contraseña actualizada con éxito");
+                                                setPasswordForm({old:'', new:'', confirm:''});
+                                            } catch(err) {
+                                                alert(err.response?.data?.detail || "Error al cambiar password");
+                                            }
+                                        }}>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-purple-200/50 uppercase mb-2 ml-1">Contraseña Actual</label>
+                                                <input type="password" value={passwordForm.old} onChange={e=>setPasswordForm({...passwordForm, old: e.target.value})} className="w-full bg-[#161234] border border-purple-500/20 text-white rounded-xl p-3 text-sm focus:border-purple-500/60 outline-none transition" placeholder="••••••••" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-purple-200/50 uppercase mb-2 ml-1">Nueva Contraseña</label>
+                                                <input type="password" value={passwordForm.new} onChange={e=>setPasswordForm({...passwordForm, new: e.target.value})} className="w-full bg-[#161234] border border-purple-500/20 text-white rounded-xl p-3 text-sm focus:border-purple-500/60 outline-none transition" placeholder="Mínimo 8 caracteres" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-purple-200/50 uppercase mb-2 ml-1">Confirmar</label>
+                                                <input type="password" value={passwordForm.confirm} onChange={e=>setPasswordForm({...passwordForm, confirm: e.target.value})} className="w-full bg-[#161234] border border-purple-500/20 text-white rounded-xl p-3 text-sm focus:border-purple-500/60 outline-none transition" />
+                                            </div>
+                                            <button type="submit" className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white rounded-xl font-bold text-xs uppercase shadow-lg shadow-purple-900/40 transition-all mt-2">
+                                                Actualizar Seguridad
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                {/* COLUMNA DERECHA: ESTADISTICAS Y VENTAS */}
+                                <div className="lg:col-span-2 space-y-8">
+                                    {/* KPIS RAPIDOS */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-base)] flex items-center gap-5 shadow-sm">
+                                            <div className="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400 border border-green-500/20">
+                                                <DollarSign size={28} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-[var(--text-sec)] uppercase tracking-widest mb-1">Recaudación Total</p>
+                                                <h4 className="text-2xl font-black text-[var(--text-main)]">${profileData.stats.total_revenue.toLocaleString()}</h4>
+                                            </div>
+                                        </div>
+                                        <div className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-base)] flex items-center gap-5 shadow-sm">
+                                            <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 border border-blue-500/20">
+                                                <History size={28} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-[var(--text-sec)] uppercase tracking-widest mb-1">Volumen de Operaciones</p>
+                                                <h4 className="text-2xl font-black text-[var(--text-main)]">{profileData.stats.sales_count} Ventas</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* BARRA DE PROGRESO DE META */}
+                                    <div className="bg-[var(--bg-card)] p-8 rounded-3xl border border-[var(--border-base)] shadow-sm">
+                                        <div className="flex justify-between items-end mb-4">
+                                            <div>
+                                                <h4 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider mb-1">Rendimiento Mensual</h4>
+                                                <p className="text-xs text-[var(--text-sec)]">Meta: ${profileData.staff?.monthly_goal?.toLocaleString()}</p>
+                                            </div>
+                                            <span className={`text-2xl font-black ${profileData.stats.goal_progress >= 100 ? 'text-green-400' : 'text-[var(--text-highlight)]'}`}>
+                                                {profileData.stats.goal_progress}%
+                                            </span>
+                                        </div>
+                                        <div className="w-full h-4 bg-[var(--bg-input)] rounded-full overflow-hidden border border-[var(--border-faint)]">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-[var(--btn-start)] to-[var(--btn-end)] shadow-[0_0_10px_rgba(139,92,246,0.3)] transition-all duration-1000"
+                                                style={{ width: `${Math.min(profileData.stats.goal_progress, 100)}%` }}
+                                            ></div>
+                                        </div>
+                                        {profileData.stats.goal_progress >= 100 && (
+                                            <p className="mt-3 text-center text-[10px] font-bold text-green-400 uppercase animate-pulse">✨ ¡Has superado tu objetivo del mes! ✨</p>
+                                        )}
+                                    </div>
+
+                                    {/* TABLA DE TODAS SUS VENTAS */}
+                                    <div className="bg-[var(--bg-card)] rounded-3xl border border-[var(--border-base)] shadow-sm overflow-hidden">
+                                        <div className="p-6 border-b border-[var(--border-base)] flex justify-between items-center">
+                                            <h4 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2">
+                                                <History className="text-[var(--text-highlight)]" size={16} /> Historial de Operaciones Personales
+                                            </h4>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead className="bg-[var(--bg-input)]/50">
+                                                    <tr>
+                                                        <th className="p-4 text-[10px] font-black text-[var(--text-sec)] uppercase">Fecha</th>
+                                                        <th className="p-4 text-[10px] font-black text-[var(--text-sec)] uppercase">Cliente / Empresa</th>
+                                                        <th className="p-4 text-[10px] font-black text-[var(--text-sec)] uppercase">Ítem</th>
+                                                        <th className="p-4 text-[10px] font-black text-[var(--text-sec)] uppercase text-right">Monto</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-[var(--border-faint)]">
+                                                    {profileData.sales.map(s => (
+                                                        <tr key={s.id} className="hover:bg-[var(--bg-item)]/30 transition-colors group">
+                                                            <td className="p-4 text-xs font-medium text-[var(--text-sec)]">{s.date}</td>
+                                                            <td className="p-4 text-xs font-bold text-[var(--text-main)]">{s.customer}</td>
+                                                            <td className="p-4">
+                                                                <span className="px-2 py-1 bg-[var(--bg-item)] text-[var(--text-sec)] rounded text-[10px] border border-[var(--border-faint)] font-bold">
+                                                                    {s.product}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-4 text-xs font-black text-[var(--text-highlight)] text-right">${s.total.toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            {profileData.sales.length === 0 && (
+                                                <div className="p-10 text-center text-[var(--text-muted)] text-sm">
+                                                    Aún no hemos detectado registros de ventas bajo tu nombre.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center p-20 text-[var(--text-sec)] bg-[var(--bg-card)] rounded-3xl border-2 border-dashed border-[var(--border-base)]">
+                                No se pudo cargar la información vinculada a tu empleado.
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* SALES TAB */}
                 {activeTab === 'sales' && (
@@ -1687,6 +1894,66 @@ const AdminDashboard = () => {
                             <button onClick={handleSaveStaff} className="w-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-5 py-3.5 rounded-xl font-black uppercase text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
                                 <Briefcase size={18} /> Guardar Expediente
                             </button>
+
+                            {editingStaff.id && (
+                                <div className="mt-4 p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                                    <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Key size={14} /> Acceso a Plataforma
+                                    </h4>
+                                    {registerStep === 'form' ? (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                            <input 
+                                                type="password" 
+                                                placeholder="Asignar Contraseña Temporal" 
+                                                className="w-full bg-[var(--bg-input)] border border-indigo-500/30 text-white rounded-xl p-3 text-sm focus:border-indigo-500 outline-none"
+                                                id="temp_pass"
+                                            />
+                                            <select id="user_role" className="w-full bg-[var(--bg-input)] border border-indigo-500/30 text-white rounded-xl p-3 text-sm outline-none">
+                                                <option value="usuario">Rol: Usuario Estándar</option>
+                                                <option value="admin">Rol: Administrador</option>
+                                            </select>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => setRegisterStep(null)}
+                                                    className="flex-1 py-3 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button 
+                                                    onClick={async () => {
+                                                        const pass = document.getElementById('temp_pass').value;
+                                                        const role = document.getElementById('user_role').value;
+                                                        if(!pass) return alert("Por favor define una contraseña");
+                                                        try {
+                                                            await axios.post(`http://localhost:8000/intelligence/staff/${editingStaff.id}/register-user`, {
+                                                                password: pass,
+                                                                role: role
+                                                            });
+                                                            alert("¡Usuario creado y vinculado exitosamente!");
+                                                            setRegisterStep(null);
+                                                        } catch(err) {
+                                                            alert(err.response?.data?.detail || "Error al crear usuario");
+                                                        }
+                                                    }}
+                                                    className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs uppercase"
+                                                >
+                                                    Confirmar Acceso
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={() => setRegisterStep('form')}
+                                            className="w-full py-3 border border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10 rounded-xl font-bold text-xs uppercase transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <LogOut size={16} className="rotate-180" /> Autorizar Credenciales de Sistema
+                                        </button>
+                                    )}
+                                    <p className="mt-3 text-[10px] text-gray-500 leading-relaxed italic">
+                                        * Esto permitirá al empleado entrar a Epsilon usando su correo corporativo.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -232,6 +232,40 @@ async def update_staff(staff_id: int, staff_in: StaffUpdate, db: AsyncSession = 
         await db.commit()
     return {"status": "success", "message": "Empleado actualizado"}
 
+class UserFromStaffRequest(BaseModel):
+    password: str
+    role: str = "usuario"
+
+@router.post("/staff/{staff_id}/register-user", dependencies=[Depends(RequireRole(["admin"]))])
+async def register_staff_as_user(staff_id: int, request: UserFromStaffRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Convierte un registro de Staff en un Usuario con acceso a la plataforma.
+    """
+    # 1. Buscar empleado
+    result = await db.execute(select(Staff).where(Staff.id == staff_id))
+    staff = result.scalar_one_or_none()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Empleado no encontrado")
+        
+    # 2. Verificar si ya tiene usuario
+    from src.modules.intelligence.models import User
+    user_result = await db.execute(select(User).where(User.email == staff.email))
+    if user_result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Este correo ya tiene un usuario registrado")
+        
+    # 3. Crear usuario
+    from src.modules.auth.service import get_password_hash
+    new_user = User(
+        email=staff.email,
+        hashed_password=get_password_hash(request.password),
+        role=request.role,
+        is_active=True
+    )
+    db.add(new_user)
+    await db.commit()
+    
+    return {"status": "success", "message": f"Usuario para {staff.name} creado exitosamente con el rol {request.role}"}
+
 @router.delete("/staff/{staff_id}", dependencies=[Depends(RequireRole(["admin"]))])
 async def delete_staff(staff_id: int, db: AsyncSession = Depends(get_db)):
     """Elimina un empleado."""
