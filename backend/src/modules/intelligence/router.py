@@ -137,9 +137,24 @@ async def recalculate_vector(product_id: int, db: AsyncSession = Depends(get_db)
 @router.post("/products")
 async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db)):
     """
-    Crea un nuevo producto en el inventario.
+    Crea un nuevo producto en el inventario calculando su vector de IA automáticamente.
     """
+    from src.modules.intelligence.service import EmbeddingService
+    import json
+    
     new_product = Product(**product.model_dump())
+    
+    # Calcular vector inicial
+    payload = {
+        "name": new_product.name,
+        "description": new_product.description,
+        "price": new_product.price,
+        "stock": new_product.stock
+    }
+    embedding_service = EmbeddingService()
+    vec = await embedding_service.generate(json.dumps(payload))
+    new_product.embedding = vec
+    
     db.add(new_product)
     await db.commit()
     await db.refresh(new_product)

@@ -29,7 +29,7 @@ class ChatService:
         # El operador <-> mide la distancia (mientras menor sea, mas simillar son)
 
         # Usamos l2_distance de pgvector.
-        query = select(Product).order_by(Product.embedding.l2_distance(query_vector)).limit(3)
+        query = select(Product).order_by(Product.embedding.l2_distance(query_vector)).limit(20)
         
         # Filtro de Seguridad (RBAC)
         if role == "customer":
@@ -142,6 +142,7 @@ class ChatService:
             1. Cruza la información si te piden métricas o detalles de personas. No inventes datos.
             2. Si la respuesta REALMENTE no está en el contexto, indica cordialmente que no tienes esos registros específicos.
             3. Responde de forma ejecutiva, proactiva y segura.
+            4. IMPORTANTE: NO uses formato Markdown (como **asteriscos** para negritas, o viñetas especiales). Escribe siempre texto plano normal.
             
             Contexto:
             {context_text}
@@ -155,6 +156,7 @@ class ChatService:
             1. Mantén un tono amigable, persuasivo y muy profesional. Responde dudas comerciales.
             2. No hables de precios si no están en el contexto. No inventes productos.
             3. Si preguntan algo que no puedes responder con el contexto dado, sugiereles contactar directamente a un asesor de ventas.
+            4. IMPORTANTE: NO uses formato Markdown (como **asteriscos** para negritas, o viñetas especiales). Escribe siempre texto plano continuo normal que se lea bien como texto sin formato.
             
             Contexto Disponible:
             {context_text}
